@@ -38,7 +38,7 @@ local UploadPage = Page.extend({})
 ---@param path string the encoded file
 ---@return webm.UploadPage
 function UploadPage.new(callback, path)
-	local self = setmetatable({}, UploadPage)
+	local self = setmetatable({}, UploadPage) --[[@as webm.UploadPage]]
 	self.callback = callback
 	self.path = path
 	local _, filename = utils.split_path(path)

@@ -23,7 +23,7 @@ local PreviewPage = Page.extend({})
 ---@param end_time number
 ---@return webm.PreviewPage
 function PreviewPage.new(callback, region, start_time, end_time)
-	local self = setmetatable({}, PreviewPage)
+	local self = setmetatable({}, PreviewPage) --[[@as webm.PreviewPage]]
 	self.callback = callback
 	self.saved = {}
 	for _, name in ipairs(SAVED_PROPERTIES) do

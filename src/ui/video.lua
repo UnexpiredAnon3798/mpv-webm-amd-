@@ -22,6 +22,15 @@ M.LAYOUT_PROPERTIES = {
 	"osd-height",
 }
 
+-- These properties always exist while a video is shown.
+local function number(name)
+	return mp.get_property_number(name) --[[@as number]]
+end
+
+local function bool(name)
+	return mp.get_property_bool(name) --[[@as boolean]]
+end
+
 local changed = true
 local cached = {}
 
@@ -40,17 +49,17 @@ function M.dimensions()
 	local window_w, window_h = mp.get_osd_size()
 	cached = geometry.dimensions({
 		params = params,
-		keepaspect = mp.get_property_bool("keepaspect"),
-		rotate = mp.get_property_number("video-rotate"),
+		keepaspect = bool("keepaspect"),
+		rotate = number("video-rotate"),
 		window_w = window_w,
 		window_h = window_h,
 		unscaled = mp.get_property_native("video-unscaled"),
-		panscan = mp.get_property_number("panscan"),
-		zoom = mp.get_property_number("video-zoom"),
-		align_x = mp.get_property_number("video-align-x"),
-		pan_x = mp.get_property_number("video-pan-x"),
-		align_y = mp.get_property_number("video-align-y"),
-		pan_y = mp.get_property_number("video-pan-y"),
+		panscan = number("panscan"),
+		zoom = number("video-zoom"),
+		align_x = number("video-align-x"),
+		pan_x = number("video-pan-x"),
+		align_y = number("video-align-y"),
+		pan_y = number("video-pan-y"),
 	})
 	return cached
 end

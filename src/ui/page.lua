@@ -12,10 +12,11 @@ local video = require("ui.video")
 local Page = {}
 Page.__index = Page
 
----Makes a page class that inherits from Page.
----@generic T
----@param class T
----@return T
+---Makes a page class that inherits from Page. Annotate the result with
+---`---@class webm.Name: webm.Page`, and cast the `self` made in `new` with
+---`--[[@as webm.Name]]` so the type check sees the subclass.
+---@param class table
+---@return table
 function Page.extend(class)
 	class.__index = class
 	return setmetatable(class, { __index = Page })

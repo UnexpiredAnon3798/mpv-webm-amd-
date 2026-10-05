@@ -20,7 +20,7 @@ local EncodeProgressPage = Page.extend({})
 ---@param end_time number encoder end time
 ---@return webm.EncodeProgressPage
 function EncodeProgressPage.new(start_time, end_time)
-	local self = setmetatable({}, EncodeProgressPage)
+	local self = setmetatable({}, EncodeProgressPage) --[[@as webm.EncodeProgressPage]]
 	self.tracker = progress.new(start_time, end_time)
 	return self
 end

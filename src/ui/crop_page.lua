@@ -19,7 +19,7 @@ local CropPage = Page.extend({})
 ---@param region? webm.Region the current crop, to start from
 ---@return webm.CropPage
 function CropPage.new(callback, region)
-	local self = setmetatable({}, CropPage)
+	local self = setmetatable({}, CropPage) --[[@as webm.CropPage]]
 	self.point_a = geometry.point()
 	self.point_b = geometry.point()
 	self.keybinds = {
@@ -67,7 +67,7 @@ end
 
 function CropPage:set_point_a()
 	local x, y = mp.get_mouse_pos()
-	self.point_a:set_from_screen(video.dimensions(), x, y)
+	self.point_a:set_from_screen(video.dimensions() --[[@as webm.VideoDimensions]], x, y)
 	events.emit("crop-point-a", tostring(self.point_a.x), tostring(self.point_a.y))
 	if self.visible then
 		-- No need to clear, as we draw the entire OSD (also it causes flickering)
@@ -77,7 +77,7 @@ end
 
 function CropPage:set_point_b()
 	local x, y = mp.get_mouse_pos()
-	self.point_b:set_from_screen(video.dimensions(), x, y)
+	self.point_b:set_from_screen(video.dimensions() --[[@as webm.VideoDimensions]], x, y)
 	events.emit("crop-point-b", tostring(self.point_b.x), tostring(self.point_b.y))
 	if self.visible then
 		self:draw()

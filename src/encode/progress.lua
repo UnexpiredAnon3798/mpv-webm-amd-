@@ -45,7 +45,7 @@ function Tracker:parse_line(line)
 	local match_exit = string.match(line, "Exiting... [(]([%a ]+)[)]")
 	-- Sometimes we get timestamps older than before, so only move forward.
 	if match_time ~= nil and tonumber(match_time) > self.current_time then
-		self.current_time = tonumber(match_time)
+		self.current_time = tonumber(match_time) --[[@as number]]
 	end
 	if match_exit ~= nil then
 		self.finished = true

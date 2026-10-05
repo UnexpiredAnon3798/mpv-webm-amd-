@@ -22,8 +22,15 @@ lint:
 format:
 	stylua .
 
+# lua-language-server is called by its full path because on Windows, started
+# through sh by its bare name, it can't spawn its workers and exits 0 without
+# checking anything. Requiring the success message catches any other way it
+# could skip the check.
 typecheck:
-	lua-language-server --check=. --checklevel=Warning --configpath=.luarc.json
+	@luals="$$(command -v lua-language-server)" && \
+	out="$$("$$luals" --check=. --checklevel=Warning --configpath=.luarc.json 2>&1)"; \
+	status=$$?; printf '%s\n' "$$out"; \
+	[ $$status -eq 0 ] && printf '%s' "$$out" | grep -q "no problems found"
 
 check: lint typecheck test
 

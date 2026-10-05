@@ -1,3 +1,6 @@
+-- These tests pass only the fields the code under test reads.
+---@diagnostic disable: missing-fields
+
 local base64 = require("core.base64")
 local check = require("encode.check")
 local fake_host = require("fake_host")
@@ -133,8 +136,9 @@ describe("encode.check.encoder_problem", function()
 	end)
 
 	it("tells a missing mpv apart from a failing one", function()
-		assert.matches("^Cannot start the mpv encoder", check.encoder_problem({ status = -3 }))
-		assert.matches("^The mpv encoder failed", check.encoder_problem({ status = 2 }))
+		-- "or ''" turns a nil result into a failed match.
+		assert.matches("^Cannot start the mpv encoder", check.encoder_problem({ status = -3 }) or "")
+		assert.matches("^The mpv encoder failed", check.encoder_problem({ status = 2 }) or "")
 	end)
 end)
 
@@ -166,7 +170,7 @@ describe("encode.source.resolve", function()
 	end)
 
 	it("reads other streams directly", function()
-		local s = source.resolve(fake_host.new({ path = "https://x/v.mp4", ["file-format"] = "mp4" }), 3, 5)
+		local s = assert(source.resolve(fake_host.new({ path = "https://x/v.mp4", ["file-format"] = "mp4" }), 3, 5))
 		assert.is_true(s.is_stream)
 		assert.is_nil(s.dump_cache)
 		assert.are.equal("https://x/v.mp4", s.path)

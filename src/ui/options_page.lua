@@ -177,7 +177,7 @@ local OptionsPage = Page.extend({})
 ---@param callback fun(updated: boolean)
 ---@return webm.OptionsPage
 function OptionsPage.new(callback)
-	local self = setmetatable({}, OptionsPage)
+	local self = setmetatable({}, OptionsPage) --[[@as webm.OptionsPage]]
 	self.callback = callback
 	self.current = 1
 

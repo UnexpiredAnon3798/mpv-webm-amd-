@@ -24,7 +24,7 @@ local MainPage = Page.extend({})
 
 ---@return webm.MainPage
 function MainPage.new()
-	local self = setmetatable({}, MainPage)
+	local self = setmetatable({}, MainPage) --[[@as webm.MainPage]]
 	local function bind(method)
 		return function(...)
 			return method(self, ...)

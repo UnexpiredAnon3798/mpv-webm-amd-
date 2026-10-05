@@ -1,3 +1,6 @@
+-- These tests pass only the fields the code under test reads.
+---@diagnostic disable: missing-fields
+
 local bitrate = require("core.bitrate")
 local fake_host = require("fake_host")
 local filters = require("core.filters")
