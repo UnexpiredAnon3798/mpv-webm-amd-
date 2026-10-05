@@ -1,0 +1,64 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: JohnnyMorganz/stylua-action@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: 2.5.2
+          args: --check .
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: luajit-2.1
+      - uses: leafo/gh-actions-luarocks@v6
+      - run: luarocks install luacheck
+      - run: luacheck .
+      - name: Install lua-language-server
+        run: |
+          mkdir -p "$HOME/luals"
+          curl -sSL https://github.com/LuaLS/lua-language-server/releases/download/3.19.1/lua-language-server-3.19.1-linux-x64.tar.gz | tar -xz -C "$HOME/luals"
+          echo "$HOME/luals/bin" >> "$GITHUB_PATH"
+      # An unknown --checklevel makes the check pass silently, so keep this value exact.
+      - run: lua-language-server --check=. --checklevel=Warning --configpath=.luarc.json
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        lua: [luajit-2.1, "5.1"]
+        include:
+          - os: macos-latest
+            lua: luajit-2.1
+          - os: windows-latest
+            lua: luajit-2.1
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      # Builds Lua with MSVC on Windows; does nothing elsewhere.
+      - uses: step-security/msvc-dev-cmd@v1
+      - uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: ${{ matrix.lua }}
+      - uses: leafo/gh-actions-luarocks@v6
+      - run: luarocks install busted
+      - run: lua tools/build.lua
+      - run: busted
+      - run: lua tests/golden/run.lua
+
+  integration:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v20
+      - uses: cachix/cachix-action@v12
+        with:
+          name: mpv-webm
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - run: nix-shell tests/integration/default.nix --run "make LUA=lua"
+      - run: nix-shell tests/integration/default.nix --run "python -m tests.integration.run_tests"
