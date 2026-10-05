@@ -1,0 +1,2 @@
+# StyLua checks for LF line endings, so keep Lua files LF on every platform.
+*.lua text eol=lf
