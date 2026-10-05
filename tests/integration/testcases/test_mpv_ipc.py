@@ -4,7 +4,7 @@ import socket
 import time
 import unittest
 
-from tests.mpv_ipc import MpvIPC, MpvScriptMessageEvent
+from tests.integration.mpv_ipc import MpvIPC, MpvScriptMessageEvent
 
 
 class MpvIPCTest(unittest.TestCase):

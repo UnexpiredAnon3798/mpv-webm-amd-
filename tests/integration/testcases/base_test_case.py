@@ -9,10 +9,10 @@ import threading
 import time
 import unittest
 
-from tests.mpv_ipc import MpvIPC
+from tests.integration.mpv_ipc import MpvIPC
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 class BaseTestCase(unittest.TestCase):

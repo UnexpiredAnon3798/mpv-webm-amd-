@@ -1,4 +1,4 @@
-from tests.xvfb import XvfbDisplay
+from tests.integration.xvfb import XvfbDisplay
 from .base_test_case import BaseTestCase
 
 

@@ -17,7 +17,7 @@ class TestMissingEncoder(BaseTestCase):
         super().setUp()
 
     def test_missing_encoder_reports_actionable_error_in_all_launch_modes(self):
-        self.openTestVideoFile(ROOT / "tests/videos/big_buck_bunny_10s.mp4")
+        self.openTestVideoFile(ROOT / "tests/integration/videos/big_buck_bunny_10s.mp4")
         self.setRange(0, 1)
         for mode in ({"display_progress": False, "run_detached": False, "twopass": False},
                      {"display_progress": True, "run_detached": False, "twopass": False},

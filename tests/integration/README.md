@@ -3,7 +3,7 @@
 Run from the repository root:
 
 ```sh
-nix-shell tests/default.nix --run "make && python -m tests.run_tests"
+nix-shell tests/integration/default.nix --run "make LUA=lua && python -m tests.integration.run_tests"
 ```
 
 `make` builds `build/webm.lua` normally. Tests load that file into a real mpv
@@ -56,7 +56,7 @@ passing `region=` to `encodeClip` alone does not test mouse-coordinate mapping.
 Run just the GUI smoke test:
 
 ```sh
-nix-shell tests/default.nix --run "make && python -m unittest tests.testcases.test_gui -v"
+nix-shell tests/integration/default.nix --run "make LUA=lua && python -m unittest tests.integration.testcases.test_gui -v"
 ```
 
 IPC transport unit tests use real sockets to exercise split/coalesced JSON,

@@ -9,7 +9,6 @@ pkgs.mkShell {
     pkgs.xorg.xorgserver
     pkgs.xdotool
     pkgs.lua
-    pkgs.luaPackages.moonscript
     pkgs.python39
   ];
 }
