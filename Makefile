@@ -1,73 +1,35 @@
-# The order of the sources does matter.
-LUASOURCES := src/requires.lua
-LUASOURCES += src/options.lua
-LUASOURCES += src/base64.lua
-
-SOURCES += src/testing.moon
-SOURCES += src/util.moon
-SOURCES += src/video_to_screen.moon
-SOURCES += src/vp8_twopass_log_patcher.moon
-SOURCES += src/upload.moon
-SOURCES += src/formats/base.moon
-SOURCES += src/formats/rawvideo.moon
-SOURCES += src/formats/webm.moon
-SOURCES += src/formats/avc.moon
-SOURCES += src/formats/av1.moon
-SOURCES += src/formats/hevc.moon
-SOURCES += src/formats/mp3.moon
-SOURCES += src/formats/gif.moon
-SOURCES += src/formats/webp.moon
-SOURCES += src/Page.moon
-SOURCES += src/EncodeWithProgress.moon
-SOURCES += src/UploadWithProgress.moon
-SOURCES += src/encode.moon
-SOURCES += src/CropPage.moon
-SOURCES += src/EncodeOptionsPage.moon
-SOURCES += src/PreviewPage.moon
-SOURCES += src/MainPage.moon
-SOURCES += src/main.moon
-
-TMPDIR       := build
-JOINEDSRC    := $(TMPDIR)/webm_bundle.moon
-OUTPUT       := $(JOINEDSRC:.moon=.lua)
-JOINEDLUASRC := $(TMPDIR)/webm.lua
-CONFFILE     := $(TMPDIR)/webm.conf
-RESULTS      := $(addprefix $(TMPDIR)/, $(SOURCES:.moon=.lua))
+# The build itself lives in tools/build.lua. These targets are shortcuts.
+LUA ?= luajit
 MPVCONFIGDIR := ~/.config/mpv/
 
-.PHONY: all clean
+.PHONY: all test unit golden lint format typecheck check install clean
 
-all: $(JOINEDLUASRC) $(CONFFILE)
+all:
+	$(LUA) tools/build.lua
 
-$(OUTPUT): $(JOINEDSRC)
-	@printf 'Building %s\n' $@
-	@moonc -o $@ $<
+test: unit golden
 
-$(JOINEDSRC): $(SOURCES) | $(TMPDIR)
-	@printf 'Generating %s\n' $@
-	@cat $^ > $@
+unit:
+	busted
 
-$(JOINEDLUASRC): $(LUASOURCES) $(OUTPUT) | $(TMPDIR)
-	@printf 'Joining with Lua sources into %s.\n' $@
-	@cat $^ > $@
+golden: all
+	$(LUA) tests/golden/run.lua
 
-$(TMPDIR)/%.lua: %.moon
-	@printf 'Building %s\n' $@
-	@moonc -o $@ $< 2>/dev/null
+lint:
+	stylua --check .
+	luacheck .
 
-$(TMPDIR):
-	@mkdir -p $@
+format:
+	stylua .
 
-$(TMPDIR)/%/: | $(TMPDIR)
-	@mkdir -p $@
+typecheck:
+	lua-language-server --check=. --checklevel=Warning --configpath=.luarc.json
 
-$(CONFFILE): src/options.lua
-	@printf 'Generating %s\n' $@
-	@lua build-webm-conf.lua > $@
+check: lint typecheck test
 
-install: $(JOINEDLUASRC)
+install: all
 	install -d $(MPVCONFIGDIR)/scripts/
-	install -m 644 $(JOINEDLUASRC) $(MPVCONFIGDIR)/scripts/
+	install -m 644 build/webm.lua $(MPVCONFIGDIR)/scripts/
 
 clean:
-	@rm -rf $(TMPDIR)
+	rm -rf build

@@ -1,5 +1,9 @@
-Due to the way the build script works, .moon files inside this dir will get bundled together as a big .moon file, which will then be compiled to .lua.
+`tools/build.lua` bundles these files into the single `build/webm.lua` that users install. Each module is stored in `package.preload`, so `require("core.time")` and similar work inside that one file, and `main.lua` runs last.
 
-This means no "require"s are needed between files here, as they will behave as they were on the same file. However, the order in which the sources will be included does matter. This order is described inside the Makefile in the root directory.
+- `main.lua` wires the script into mpv: options, key binding, events.
+- `core/` is pure logic: options, filenames, filters, bitrates, timing, upload arguments, video geometry. No `mp` calls.
+- `encode/` builds encode commands, parses progress and interprets errors. No `mp` calls either.
+- `mpv/` is the code that talks to mpv: the property host used by `core/` and `encode/`, the live options, events, the encode flow, subprocesses and the clipboard.
+- `ui/` holds the OSD pages.
 
-Also, ensure every file has an empty line in the end, or the bundled .moon file will probably be broken.
+A new module has to be added to `MODULES` in `tools/build.lua`.
