@@ -9,6 +9,9 @@ local shell = require("encode.shell")
 local source = require("encode.source")
 local vp8_log = require("encode.vp8_log")
 
+local IS_WINDOWS = true
+local IS_UNIX = false
+
 describe("core.base64", function()
 	it("encodes with padding", function()
 		assert.are.equal("", base64.encode(""))
@@ -22,78 +25,114 @@ describe("core.base64", function()
 	end)
 
 	it("round-trips every byte value", function()
+		local LAST_BYTE_VALUE = 255
 		local bytes = {}
-		for i = 0, 255 do
-			bytes[#bytes + 1] = string.char(i)
+		for byte_value = 0, LAST_BYTE_VALUE do
+			bytes[#bytes + 1] = string.char(byte_value)
 		end
 		local data = table.concat(bytes)
 		assert.are.equal(data, base64.decode(base64.encode(data)))
 	end)
 end)
 
--- Little-endian double, for checking what the patcher wrote.
-local function read_double(s)
-	local b = { s:byte(1, 8) }
-	local sign = b[8] > 127 and -1 or 1
-	local exponent = (b[8] % 128) * 16 + math.floor(b[7] / 16)
-	local mantissa = b[7] % 16
-	for i = 6, 1, -1 do
-		mantissa = mantissa * 256 + b[i]
+-- An IEEE 754 double is 8 bytes: 1 sign bit, 11 exponent bits and 52
+-- mantissa bits, stored here with the least significant byte first.
+local DOUBLE_SIZE = 8
+local EXPONENT_BIAS = 1023
+local MANTISSA_BITS = 52
+
+-- Reads a little-endian double, for checking what the patcher wrote.
+local function read_double(text)
+	local bytes = { text:byte(1, DOUBLE_SIZE) }
+	local highest, second_highest = bytes[8], bytes[7]
+	local sign = highest >= 128 and -1 or 1
+	-- The exponent is the low 7 bits of the highest byte and the high 4 bits of the next one.
+	local exponent = (highest % 128) * 16 + math.floor(second_highest / 16)
+	local mantissa = second_highest % 16
+	for byte_index = 6, 1, -1 do
+		mantissa = mantissa * 256 + bytes[byte_index]
 	end
 	if exponent == 0 then
 		return 0
 	end
-	return sign * math.ldexp(math.ldexp(mantissa, -52) + 1, exponent - 1023)
+	return sign * math.ldexp(math.ldexp(mantissa, -MANTISSA_BITS) + 1, exponent - EXPONENT_BIAS)
 end
 
 describe("encode.vp8_log", function()
-	local RECORD = 144
-	local function records(n)
-		local out = {}
-		for i = 1, n * RECORD do
-			out[#out + 1] = string.char((i * 7) % 256)
+	-- Each libvpx first-pass record is 18 doubles. The 17th is the duration.
+	local RECORD_SIZE = 18 * DOUBLE_SIZE
+	local DURATION_START = 16 * DOUBLE_SIZE + 1
+	local DURATION_END = DURATION_START + DOUBLE_SIZE - 1
+	-- Durations are stored in units of 1/10,000,000 of a second.
+	local DURATION_UNITS_PER_SECOND = 10000000
+
+	-- Makes the given number of records filled with a recognizable byte pattern.
+	local function make_records(count)
+		local bytes = {}
+		for position = 1, count * RECORD_SIZE do
+			bytes[#bytes + 1] = string.char((position * 7) % 256)
 		end
-		return table.concat(out)
+		return table.concat(bytes)
+	end
+
+	-- record_index counts from 0.
+	local function record_offset(record_index)
+		return record_index * RECORD_SIZE
 	end
 
 	it("gives frames the average duration and the aggregate the total", function()
-		local data = records(3)
-		local patched = vp8_log.patch(data, 4)
+		local frame_count = 2
+		local total_seconds = 4
+		-- The last record is the aggregate of all the frames.
+		local data = make_records(frame_count + 1)
+		local patched = vp8_log.patch(data, total_seconds)
 		assert.are.equal(#data, #patched)
-		local function duration(i)
-			return read_double(patched:sub(i * RECORD + 129, i * RECORD + 136)) / 1e7
+
+		local function duration_of(record_index)
+			local offset = record_offset(record_index)
+			local stored = patched:sub(offset + DURATION_START, offset + DURATION_END)
+			return read_double(stored) / DURATION_UNITS_PER_SECOND
 		end
-		assert.are.equal(2, duration(0))
-		assert.are.equal(2, duration(1))
-		assert.are.equal(4, duration(2))
+		local average_seconds = total_seconds / frame_count
+		assert.are.equal(average_seconds, duration_of(0))
+		assert.are.equal(average_seconds, duration_of(1))
+		assert.are.equal(total_seconds, duration_of(frame_count))
 	end)
 
 	it("leaves every other byte alone", function()
-		local data = records(2)
-		local patched = vp8_log.patch(data, 1.5)
-		for i = 0, 1 do
-			local from, to = i * RECORD, (i + 1) * RECORD
-			assert.are.equal(data:sub(from + 1, from + 128), patched:sub(from + 1, from + 128))
-			assert.are.equal(data:sub(from + 137, to), patched:sub(from + 137, to))
+		local record_count = 2
+		local total_seconds = 1.5
+		local data = make_records(record_count)
+		local patched = vp8_log.patch(data, total_seconds)
+		for record_index = 0, record_count - 1 do
+			local offset = record_offset(record_index)
+			local before_duration = { offset + 1, offset + DURATION_START - 1 }
+			local after_duration = { offset + DURATION_END + 1, offset + RECORD_SIZE }
+			assert.are.equal(data:sub(unpack(before_duration)), patched:sub(unpack(before_duration)))
+			assert.are.equal(data:sub(unpack(after_duration)), patched:sub(unpack(after_duration)))
 		end
 	end)
 
 	it("rejects a log with a partial record or no records", function()
+		local any_duration = 1
 		assert.has_error(function()
-			vp8_log.patch(records(1) .. "x", 1)
+			vp8_log.patch(make_records(1) .. "x", any_duration)
 		end)
 		assert.has_error(function()
-			vp8_log.patch("", 1)
+			vp8_log.patch("", any_duration)
 		end)
 	end)
 end)
 
 describe("encode.progress", function()
 	it("tracks the furthest position and the exit reason", function()
-		local tracker = progress.new(10, 20)
+		local start_time, end_time = 10, 20
+		local tracker = progress.new(start_time, end_time)
 		assert.are.equal("0%", tracker:percent_text())
-		tracker:parse_line("Encode time-pos: 15.000000")
-		tracker:parse_line("Encode time-pos: 12.000000")
+		local halfway = start_time + (end_time - start_time) / 2
+		tracker:parse_line(string.format("Encode time-pos: %f", halfway))
+		local earlier = halfway - 3
+		tracker:parse_line(string.format("Encode time-pos: %f", earlier))
 		assert.are.equal("50%", tracker:percent_text())
 		assert.is_false(tracker.finished)
 		tracker:parse_line("Exiting... (End of file)")
@@ -108,9 +147,9 @@ describe("encode.progress", function()
 	end)
 
 	it("shows progress automatically except on Windows", function()
-		assert.is_true(progress.should_display({ display_progress = "auto" }, false))
-		assert.is_false(progress.should_display({ display_progress = "auto" }, true))
-		assert.is_false(progress.should_display({ display_progress = false }, false))
+		assert.is_true(progress.should_display({ display_progress = "auto" }, IS_UNIX))
+		assert.is_false(progress.should_display({ display_progress = "auto" }, IS_WINDOWS))
+		assert.is_false(progress.should_display({ display_progress = false }, IS_UNIX))
 	end)
 end)
 
@@ -118,27 +157,32 @@ describe("encode.shell", function()
 	it("quotes arguments with special characters for sh", function()
 		assert.are.equal(
 			"mpv '/a b.mkv' 'it'\\''s' --no-pause 2>&1",
-			shell.popen_command({ "mpv", "/a b.mkv", "it's", "--no-pause" }, false)
+			shell.popen_command({ "mpv", "/a b.mkv", "it's", "--no-pause" }, IS_UNIX)
 		)
 	end)
 
 	it("quotes for cmd and wraps the whole line", function()
 		assert.are.equal(
 			'""C:\\a b.mkv" "say "\\""hi"\\"""" 2>&1',
-			shell.popen_command({ "C:\\a b.mkv", 'say "hi"' }, true)
+			shell.popen_command({ "C:\\a b.mkv", 'say "hi"' }, IS_WINDOWS)
 		)
 	end)
 end)
 
 describe("encode.check.encoder_problem", function()
+	local EXIT_SUCCESS = 0
+	-- mpv reports negative statuses when the process could not start at all.
+	local COULD_NOT_START = -3
+	local EXITED_WITH_ERROR = 2
+
 	it("is fine when mpv runs", function()
-		assert.is_nil(check.encoder_problem({ status = 0 }))
+		assert.is_nil(check.encoder_problem({ status = EXIT_SUCCESS }))
 	end)
 
 	it("tells a missing mpv apart from a failing one", function()
 		-- "or ''" turns a nil result into a failed match.
-		assert.matches("^Cannot start the mpv encoder", check.encoder_problem({ status = -3 }) or "")
-		assert.matches("^The mpv encoder failed", check.encoder_problem({ status = 2 }) or "")
+		assert.matches("^Cannot start the mpv encoder", check.encoder_problem({ status = COULD_NOT_START }) or "")
+		assert.matches("^The mpv encoder failed", check.encoder_problem({ status = EXITED_WITH_ERROR }) or "")
 	end)
 end)
 
@@ -148,31 +192,44 @@ describe("encode.source.resolve", function()
 	end)
 
 	it("uses a local file as it is", function()
+		local start_time, end_time = 1, 2
 		local host = fake_host.new({ path = "/videos/a.mkv" }, { files = { ["/videos/a.mkv"] = true } })
-		local s = source.resolve(host, 1, 2)
-		assert.are.same(
-			{ path = "/videos/a.mkv", is_stream = false, is_temporary = false, start_time = 1, end_time = 2 },
-			s
-		)
+		local resolved = source.resolve(host, start_time, end_time)
+		assert.are.same({
+			path = "/videos/a.mkv",
+			is_stream = false,
+			is_temporary = false,
+			start_time = start_time,
+			end_time = end_time,
+		}, resolved)
 	end)
 
 	it("dumps the cache of an HLS stream and rebases the times", function()
+		local start_time, end_time = 30, 35
+		-- The dump keeps 5 extra seconds past the end of the selection.
+		local extra_seconds = 5
 		local host = fake_host.new({ path = "https://x/live.m3u8", ["file-format"] = "hls" })
-		local s = source.resolve(host, 30, 35)
+		local resolved = source.resolve(host, start_time, end_time)
 		assert.are.same({
 			path = "/home/me/cache_dump.ts",
 			is_stream = true,
 			is_temporary = true,
 			start_time = 0,
-			end_time = 5,
-			dump_cache = { "dump_cache", "0:00:30.000", "0:00:40.000", "/home/me/cache_dump.ts" },
-		}, s)
+			end_time = end_time - start_time,
+			dump_cache = {
+				"dump_cache",
+				"0:00:" .. start_time .. ".000",
+				"0:00:" .. (end_time + extra_seconds) .. ".000",
+				"/home/me/cache_dump.ts",
+			},
+		}, resolved)
 	end)
 
 	it("reads other streams directly", function()
-		local s = assert(source.resolve(fake_host.new({ path = "https://x/v.mp4", ["file-format"] = "mp4" }), 3, 5))
-		assert.is_true(s.is_stream)
-		assert.is_nil(s.dump_cache)
-		assert.are.equal("https://x/v.mp4", s.path)
+		local host = fake_host.new({ path = "https://x/v.mp4", ["file-format"] = "mp4" })
+		local resolved = assert(source.resolve(host, 3, 5))
+		assert.is_true(resolved.is_stream)
+		assert.is_nil(resolved.dump_cache)
+		assert.are.equal("https://x/v.mp4", resolved.path)
 	end)
 end)

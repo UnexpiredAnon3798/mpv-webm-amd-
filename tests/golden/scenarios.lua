@@ -2,20 +2,20 @@
 -- mpv world, loads the built script, then runs its steps. The resulting
 -- transcript is compared with expected/<name>.txt.
 
-local function merge(base, extra)
-	local out = {}
-	for k, v in pairs(base) do
-		out[k] = v
+local function merge(base, overrides)
+	local merged = {}
+	for key, value in pairs(base) do
+		merged[key] = value
 	end
-	for k, v in pairs(extra or {}) do
-		out[k] = v
+	for key, value in pairs(overrides or {}) do
+		merged[key] = value
 	end
-	return out
+	return merged
 end
 
 -- A paused local file with one selected video, audio and subtitle track.
 -- Float-valued sub-* properties are given as mpv formats them ("%f").
-local function base_props(extra)
+local function base_properties(overrides)
 	return merge({
 		path = "/videos/My Clip.mkv",
 		filename = "My Clip.mkv",
@@ -82,37 +82,39 @@ local function base_props(extra)
 		["video-align-y"] = 0,
 		["video-pan-x"] = 0,
 		["video-pan-y"] = 0,
-	}, extra)
+	}, overrides)
 end
 
-local function world(extra)
-	extra = extra or {}
+-- The settings fake_mpv.new takes, with the base file, properties and home
+-- directory filled in. Directories in files are marked with true.
+local function world(settings)
+	settings = settings or {}
 	return {
-		platform = extra.platform,
-		props = base_props(extra.props),
-		osd_props = merge({ ["osd-ass-cc/0"] = "<ass>" }, extra.osd_props),
-		files = merge({ ["/videos/My Clip.mkv"] = "source", ["/home/tester"] = true }, extra.files),
-		env = extra.env or { HOME = "/home/tester" },
-		conf = extra.conf,
-		encoder_check = extra.encoder_check,
-		curl = extra.curl,
-		first_pass_status = extra.first_pass_status,
-		encode_status = extra.encode_status,
-		popen_lines = extra.popen_lines,
-		upload = extra.upload,
-		clipboard_property = extra.clipboard_property,
-		file_size = extra.file_size,
-		osd_w = extra.osd_w,
-		osd_h = extra.osd_h,
+		platform = settings.platform,
+		properties = base_properties(settings.properties),
+		osd_properties = merge({ ["osd-ass-cc/0"] = "<ass>" }, settings.osd_properties),
+		files = merge({ ["/videos/My Clip.mkv"] = "source", ["/home/tester"] = true }, settings.files),
+		environment = settings.environment or { HOME = "/home/tester" },
+		conf_file = settings.conf_file,
+		encoder_check = settings.encoder_check,
+		curl_check = settings.curl_check,
+		first_pass_status = settings.first_pass_status,
+		encode_status = settings.encode_status,
+		encoder_output_lines = settings.encoder_output_lines,
+		upload = settings.upload,
+		clipboard_property = settings.clipboard_property,
+		file_size = settings.file_size,
+		osd_width = settings.osd_width,
+		osd_height = settings.osd_height,
 	}
 end
 
 -- Synchronous, no progress page: the common setup for command goldens.
-local SYNC = { display_progress = false }
+local SYNCHRONOUS = { display_progress = false }
 
 local scenarios = {}
-local function add(s)
-	scenarios[#scenarios + 1] = s
+local function add(scenario)
+	scenarios[#scenarios + 1] = scenario
 end
 
 -- Loading and options ---------------------------------------------------------
@@ -126,7 +128,7 @@ add({
 add({
 	name = "options_from_conf",
 	world = world({
-		conf = {
+		conf_file = {
 			output_format = "avc",
 			twopass = "no",
 			target_filesize = "5000",
@@ -146,15 +148,15 @@ add({
 -- the string "no". This pins how that value currently behaves.
 add({
 	name = "conf_display_progress_no",
-	world = world({ conf = { display_progress = "no", output_format = "avc", twopass = "no" } }),
-	steps = { { "range", 1.5, 4.25 }, { "encode" } },
+	world = world({ conf_file = { display_progress = "no", output_format = "avc", twopass = "no" } }),
+	steps = { { "range", start_time = 1.5, end_time = 4.25 }, { "encode" } },
 })
 
 add({
 	name = "set_options_message",
 	world = world(),
 	steps = {
-		{ "options", { output_format = "gif", twopass = false, target_filesize = 0, fps = 15 } },
+		{ "options", values = { output_format = "gif", twopass = false, target_filesize = 0, fps = 15 } },
 		{ "dump_options" },
 	},
 })
@@ -165,13 +167,17 @@ add({
 add({
 	name = "encode_default_vp8_twopass_progress",
 	world = world(),
-	steps = { { "range", 1.5, 4.25 }, { "encode" } },
+	steps = { { "range", start_time = 1.5, end_time = 4.25 }, { "encode" } },
 })
 
 add({
 	name = "encode_vp8_bt709_colormatrix",
-	world = world({ props = { ["video-params/colormatrix"] = "bt.709" } }),
-	steps = { { "options", merge(SYNC, { twopass = false }) }, { "range", 0, 2 }, { "encode" } },
+	world = world({ properties = { ["video-params/colormatrix"] = "bt.709" } }),
+	steps = {
+		{ "options", values = merge(SYNCHRONOUS, { twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
+		{ "encode" },
+	},
 })
 
 local format_ids = {
@@ -189,13 +195,13 @@ local format_ids = {
 	"mp3",
 	"raw",
 }
-for _, id in ipairs(format_ids) do
+for _, format_id in ipairs(format_ids) do
 	add({
-		name = "format_" .. id,
+		name = "format_" .. format_id,
 		world = world(),
 		steps = {
-			{ "options", merge(SYNC, { output_format = id }) },
-			{ "range", 1.5, 4.25 },
+			{ "options", values = merge(SYNCHRONOUS, { output_format = format_id }) },
+			{ "range", start_time = 1.5, end_time = 4.25 },
 			{ "encode" },
 		},
 	})
@@ -207,12 +213,12 @@ add({
 	steps = {
 		{
 			"options",
-			merge(
-				SYNC,
+			values = merge(
+				SYNCHRONOUS,
 				{ output_format = "avc", twopass = false, scale_height = 720, fps = 30, target_filesize = 5000 }
 			),
 		},
-		{ "range", 2, 6.5, { x = 100, y = 50, w = 640, h = 360 } },
+		{ "range", start_time = 2, end_time = 6.5, region = { x = 100, y = 50, w = 640, h = 360 } },
 		{ "encode" },
 	},
 })
@@ -221,8 +227,11 @@ add({
 	name = "encode_avc_constant_quality",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = true, target_filesize = 0, crf = 23 }) },
-		{ "range", 1, 3 },
+		{
+			"options",
+			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = true, target_filesize = 0, crf = 23 }),
+		},
+		{ "range", start_time = 1, end_time = 3 },
 		{ "encode" },
 	},
 })
@@ -233,7 +242,7 @@ add({
 	steps = {
 		{
 			"options",
-			merge(SYNC, {
+			values = merge(SYNCHRONOUS, {
 				output_format = "avc",
 				twopass = false,
 				strict_filesize_constraint = true,
@@ -242,7 +251,7 @@ add({
 				additional_flags = "--ovcopts-add=preset=slow",
 			}),
 		},
-		{ "range", 0, 7 },
+		{ "range", start_time = 0, end_time = 7 },
 		{ "encode" },
 	},
 })
@@ -251,32 +260,32 @@ add({
 	name = "encode_mp3_bitrate",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "mp3", target_filesize = 1000 }) },
-		{ "range", 0, 3 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "mp3", target_filesize = 1000 }) },
+		{ "range", start_time = 0, end_time = 3 },
 		{ "encode" },
-		{ "options", { strict_filesize_constraint = true } },
+		{ "options", values = { strict_filesize_constraint = true } },
 		{ "encode" },
 	},
 })
 
 add({
 	name = "encode_gif_full",
-	world = world({ props = { speed = 2, ["video-rotate"] = 90, deinterlace = "yes" } }),
+	world = world({ properties = { speed = 2, ["video-rotate"] = 90, deinterlace = "yes" } }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "gif", scale_height = 240, fps = 15 }) },
-		{ "range", 61.25, 64.5, { x = 10, y = 20, w = 300, h = 200 } },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "gif", scale_height = 240, fps = 15 }) },
+		{ "range", start_time = 61.25, end_time = 64.5, region = { x = 10, y = 20, w = 300, h = 200 } },
 		{ "encode" },
 	},
 })
 
 add({
 	name = "encode_gif_sierra_rotations",
-	world = world({ props = { ["video-rotate"] = 270 } }),
+	world = world({ properties = { ["video-rotate"] = 270 } }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "gif", gif_dither = 6 }) },
-		{ "range", 0, 1 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "gif", gif_dither = 6 }) },
+		{ "range", start_time = 0, end_time = 1 },
 		{ "encode" },
-		{ "set", "video-rotate", 180 },
+		{ "set", name = "video-rotate", value = 180 },
 		{ "encode" },
 	},
 })
@@ -285,10 +294,10 @@ add({
 	name = "encode_webp_quality",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "webp", crf = 4 }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "webp", crf = 4 }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
-		{ "options", { crf = 50 } },
+		{ "options", values = { crf = 50 } },
 		{ "encode" },
 	},
 })
@@ -297,22 +306,22 @@ add({
 	name = "encode_raw_colorspaces",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "raw" }) },
-		{ "range", 0, 1 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "raw" }) },
+		{ "range", start_time = 0, end_time = 1 },
 		{ "encode" },
-		{ "set", "colormatrix", "bt.2020" },
+		{ "set", name = "colormatrix", value = "bt.2020" },
 		{ "encode" },
-		{ "set", "colormatrix", "weird" },
+		{ "set", name = "colormatrix", value = "weird" },
 		{ "encode" },
 	},
 })
 
 add({
 	name = "encode_speed_and_subtitle_timing",
-	world = world({ props = { speed = 0.2, ["sub-speed"] = 1.5, ["sub-delay"] = 0.5 } }),
+	world = world({ properties = { speed = 0.2, ["sub-speed"] = 1.5, ["sub-delay"] = 0.5 } }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 10, 12 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 10, end_time = 12 },
 		{ "encode" },
 	},
 })
@@ -320,7 +329,7 @@ add({
 add({
 	name = "encode_current_filters",
 	world = world({
-		props = {
+		properties = {
 			vf = {
 				{
 					name = "lavfi-crop",
@@ -339,14 +348,14 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
-		{ "note", "same filters, apply_current_filters off" },
-		{ "options", { apply_current_filters = false } },
+		{ "note", text = "same filters, apply_current_filters off" },
+		{ "options", values = { apply_current_filters = false } },
 		{ "encode" },
-		{ "note", "same filters through the GIF graph" },
-		{ "options", { apply_current_filters = true, output_format = "gif" } },
+		{ "note", text = "same filters through the GIF graph" },
+		{ "options", values = { apply_current_filters = true, output_format = "gif" } },
 		{ "encode" },
 	},
 })
@@ -357,7 +366,7 @@ add({
 	steps = {
 		{
 			"options",
-			merge(SYNC, {
+			values = merge(SYNCHRONOUS, {
 				output_format = "avc",
 				twopass = false,
 				force_square_pixels = true,
@@ -367,7 +376,7 @@ add({
 				completion_command = "show-text '%{output}'",
 			}),
 		},
-		{ "range", 0, 2 },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -375,7 +384,7 @@ add({
 add({
 	name = "encode_tracks_external_and_mixed_audio",
 	world = world({
-		props = {
+		properties = {
 			["track-list"] = {
 				{ id = 1, type = "video", selected = true, external = false },
 				{ id = 1, type = "audio", selected = true, external = false },
@@ -399,8 +408,8 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -408,7 +417,7 @@ add({
 add({
 	name = "encode_long_external_filename",
 	world = world({
-		props = {
+		properties = {
 			["track-list"] = {
 				{ id = 1, type = "video", selected = true, external = false },
 				{
@@ -422,18 +431,18 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
 
 add({
 	name = "encode_muted_without_subs",
-	world = world({ props = { mute = true, ["sub-visibility"] = false } }),
+	world = world({ properties = { mute = true, ["sub-visibility"] = false } }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -441,7 +450,7 @@ add({
 add({
 	name = "encode_hls_stream",
 	world = world({
-		props = {
+		properties = {
 			path = "https://example.com/live/index.m3u8",
 			filename = "index.m3u8",
 			["filename/no-ext"] = "index",
@@ -452,8 +461,8 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", { output_format = "webm-vp8", display_progress = false } },
-		{ "range", 30, 35 },
+		{ "options", values = { output_format = "webm-vp8", display_progress = false } },
+		{ "range", start_time = 30, end_time = 35 },
 		{ "encode" },
 	},
 })
@@ -461,7 +470,7 @@ add({
 add({
 	name = "encode_plain_stream",
 	world = world({
-		props = {
+		properties = {
 			path = "https://example.com/video.mp4",
 			filename = "video.mp4",
 			["filename/no-ext"] = "video",
@@ -473,8 +482,8 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", { output_format = "avc", display_progress = false, output_template = "%T-%X{net}%x" } },
-		{ "range", 3, 5 },
+		{ "options", values = { output_format = "avc", display_progress = false, output_template = "%T-%X{net}%x" } },
+		{ "range", start_time = 3, end_time = 5 },
 		{ "encode" },
 	},
 })
@@ -483,8 +492,8 @@ add({
 	name = "encode_run_detached",
 	world = world(),
 	steps = {
-		{ "options", { output_format = "avc", twopass = false, run_detached = true } },
-		{ "range", 0, 2 },
+		{ "options", values = { output_format = "avc", twopass = false, run_detached = true } },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -493,8 +502,11 @@ add({
 	name = "encode_output_directory_tilde",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false, output_directory = "~/clips" }) },
-		{ "range", 0, 2 },
+		{
+			"options",
+			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, output_directory = "~/clips" }),
+		},
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -503,31 +515,34 @@ add({
 	name = "encode_windows_progress",
 	world = world({
 		platform = "windows",
-		props = {
+		properties = {
 			path = 'C:\\Videos\\It\'s "ok".mkv',
 			filename = 'It\'s "ok".mkv',
 			["filename/no-ext"] = 'It\'s "ok"',
 			["stream-open-filename"] = 'C:\\Videos\\It\'s "ok".mkv',
 		},
 		files = { ['C:\\Videos\\It\'s "ok".mkv'] = "source" },
-		env = { USERPROFILE = "C:\\Users\\tester" },
+		environment = { USERPROFILE = "C:\\Users\\tester" },
 	}),
 	steps = {
-		{ "options", { output_format = "avc", twopass = false, display_progress = true, output_template = "%F" } },
-		{ "range", 0, 2 },
+		{
+			"options",
+			values = { output_format = "avc", twopass = false, display_progress = true, output_template = "%F" },
+		},
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
-		{ "note", "display_progress=auto is off on Windows" },
-		{ "options", { display_progress = "auto", output_directory = "~" } },
+		{ "note", text = "display_progress=auto is off on Windows" },
+		{ "options", values = { display_progress = "auto", output_directory = "~" } },
 		{ "encode" },
 	},
 })
 
 add({
 	name = "encode_progress_failure",
-	world = world({ popen_lines = { "Encode time-pos: 1.000000", "Exiting... (Errors when loading file)" } }),
+	world = world({ encoder_output_lines = { "Encode time-pos: 1.000000", "Exiting... (Errors when loading file)" } }),
 	steps = {
-		{ "options", { output_format = "avc", twopass = false, display_progress = true } },
-		{ "range", 0, 2 },
+		{ "options", values = { output_format = "avc", twopass = false, display_progress = true } },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -536,8 +551,8 @@ add({
 	name = "encode_failures",
 	world = world({ encode_status = 1 }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -546,8 +561,8 @@ add({
 	name = "encode_first_pass_fails",
 	world = world({ first_pass_status = 1 }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc" }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc" }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
 })
@@ -555,31 +570,31 @@ add({
 add({
 	name = "encode_encoder_missing",
 	world = world({ encoder_check = { status = -3, stdout = "", error_string = "init" } }),
-	steps = { { "range", 0, 2 }, { "encode" } },
+	steps = { { "range", start_time = 0, end_time = 2 }, { "encode" } },
 })
 
 add({
 	name = "encode_encoder_broken",
 	world = world({ encoder_check = { status = 2, stdout = "oops", stderr = "bad", error_string = "" } }),
-	steps = { { "range", 0, 2 }, { "encode" } },
+	steps = { { "range", start_time = 0, end_time = 2 }, { "encode" } },
 })
 
 add({
 	name = "encode_invalid_output_format",
-	world = world({ conf = { output_format = "h264" } }),
-	steps = { { "options", SYNC }, { "range", 0, 2 }, { "encode" } },
+	world = world({ conf_file = { output_format = "h264" } }),
+	steps = { { "options", values = SYNCHRONOUS }, { "range", start_time = 0, end_time = 2 }, { "encode" } },
 })
 
 add({
 	name = "encode_no_file",
-	world = world({ props = { path = false } }),
-	steps = { { "set", "path", nil }, { "range", 0, 2 }, { "encode" } },
+	world = world({ properties = { path = false } }),
+	steps = { { "set", name = "path", value = nil }, { "range", start_time = 0, end_time = 2 }, { "encode" } },
 })
 
 -- Output filenames ------------------------------------------------------------
 
 local filename_world = world({
-	props = { ["media-title"] = "Title: 100% <Live>", height = 1080 },
+	properties = { ["media-title"] = "Title: 100% <Live>", height = 1080 },
 	files = { ["/videos/clip_0001.mp4"] = "x", ["/videos/clip_0002.mp4"] = "x", ["/videos/seq 1.mp4"] = "x" },
 })
 
@@ -587,34 +602,34 @@ add({
 	name = "filename_templates",
 	world = filename_world,
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 3723.4567, 3725.0015 },
-		{ "filename", "%F-[%s-%e]%M" },
-		{ "filename", "%f" },
-		{ "filename", "%T" },
-		{ "filename", "%S_%E" },
-		{ "filename", "%wH:%wM:%wS.%wT" },
-		{ "filename", "%wh %wm %ws %wf" },
-		{ "filename", "%mH-%mM-%mS-%mT %mh %mm %ms %mf" },
-		{ "filename", "%p_%P" },
-		{ "filename", "%mp_%mP" },
-		{ "filename", "%R" },
-		{ "filename", "%mb" },
-		{ "filename", "100%t%" },
-		{ "filename", "%tY-%tm-%td %tH.%tM" },
-		{ "filename", "%x|%X{dir}" },
-		{ "filename", "%{filename/no-ext}" },
-		{ "filename", "%{?pause:paused}%{!pause:playing}" },
-		{ "filename", "%{?pause==yes:Y}%{!pause==yes:N}" },
-		{ "filename", "%{missing:fallback}" },
-		{ "filename", "%{missing:${filename/no-ext}}" },
-		{ "filename", 'a<b>c:d"e/f\\g|h?i*j' },
-		{ "filename", "clip_%04n" },
-		{ "filename", "clip_%04n" },
-		{ "filename", "seq %n" },
-		{ "filename", "seq %n-%02n" },
-		{ "filename", "literal %%n" },
-		{ "filename", "%{?missing:%n}none" },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 3723.4567, end_time = 3725.0015 },
+		{ "filename", template = "%F-[%s-%e]%M" },
+		{ "filename", template = "%f" },
+		{ "filename", template = "%T" },
+		{ "filename", template = "%S_%E" },
+		{ "filename", template = "%wH:%wM:%wS.%wT" },
+		{ "filename", template = "%wh %wm %ws %wf" },
+		{ "filename", template = "%mH-%mM-%mS-%mT %mh %mm %ms %mf" },
+		{ "filename", template = "%p_%P" },
+		{ "filename", template = "%mp_%mP" },
+		{ "filename", template = "%R" },
+		{ "filename", template = "%mb" },
+		{ "filename", template = "100%t%" },
+		{ "filename", template = "%tY-%tm-%td %tH.%tM" },
+		{ "filename", template = "%x|%X{dir}" },
+		{ "filename", template = "%{filename/no-ext}" },
+		{ "filename", template = "%{?pause:paused}%{!pause:playing}" },
+		{ "filename", template = "%{?pause==yes:Y}%{!pause==yes:N}" },
+		{ "filename", template = "%{missing:fallback}" },
+		{ "filename", template = "%{missing:${filename/no-ext}}" },
+		{ "filename", template = 'a<b>c:d"e/f\\g|h?i*j' },
+		{ "filename", template = "clip_%04n" },
+		{ "filename", template = "clip_%04n" },
+		{ "filename", template = "seq %n" },
+		{ "filename", template = "seq %n-%02n" },
+		{ "filename", template = "literal %%n" },
+		{ "filename", template = "%{?missing:%n}none" },
 	},
 })
 
@@ -622,19 +637,19 @@ add({
 	name = "filename_audio_and_scale_markers",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
-		{ "filename", "%M%R" },
-		{ "options", { scale_height = 720 } },
-		{ "filename", "%M%R" },
-		{ "set", "mute", true },
-		{ "filename", "%M" },
-		{ "set", "mute", false },
-		{ "set", "aid", false },
-		{ "filename", "%M" },
-		{ "set", "aid", 1 },
-		{ "options", { output_format = "gif" } },
-		{ "filename", "%M" },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
+		{ "filename", template = "%M%R" },
+		{ "options", values = { scale_height = 720 } },
+		{ "filename", template = "%M%R" },
+		{ "set", name = "mute", value = true },
+		{ "filename", template = "%M" },
+		{ "set", name = "mute", value = false },
+		{ "set", name = "aid", value = false },
+		{ "filename", template = "%M" },
+		{ "set", name = "aid", value = 1 },
+		{ "options", values = { output_format = "gif" } },
+		{ "filename", template = "%M" },
 	},
 })
 
@@ -644,7 +659,7 @@ add({
 add({
 	name = "filename_media_values_with_specifiers",
 	world = world({
-		props = {
+		properties = {
 			path = "/videos/50%Foo ${pause}.mkv",
 			filename = "50%Foo ${pause}.mkv",
 			["filename/no-ext"] = "50%Foo ${pause}",
@@ -654,11 +669,11 @@ add({
 		files = { ["/videos/50%Foo ${pause}.mkv"] = "source" },
 	}),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
-		{ "filename", "%f" },
-		{ "filename", "%F" },
-		{ "filename", "%T" },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
+		{ "filename", template = "%f" },
+		{ "filename", template = "%F" },
+		{ "filename", template = "%T" },
 	},
 })
 
@@ -666,39 +681,39 @@ add({
 
 add({
 	name = "ui_main_page",
-	world = world({ curl = { status = 1, stdout = "", error_string = "" } }),
+	world = world({ curl_check = { status = 1, stdout = "", error_string = "" } }),
 	steps = {
-		{ "key", "W" },
+		{ "key", key = "W" },
 		{ "bindings" },
-		{ "set", "time-pos", 2.25 },
-		{ "key", "1" },
-		{ "set", "time-pos", 3725.5 },
-		{ "key", "2" },
-		{ "key", "!" },
-		{ "key", "@" },
-		{ "key", "u" },
-		{ "key", "ESC" },
+		{ "set", name = "time-pos", value = 2.25 },
+		{ "key", key = "1" },
+		{ "set", name = "time-pos", value = 3725.5 },
+		{ "key", key = "2" },
+		{ "key", key = "!" },
+		{ "key", key = "@" },
+		{ "key", key = "u" },
+		{ "key", key = "ESC" },
 		{ "bindings" },
-		{ "key", "W" },
-		{ "key", "W" },
+		{ "key", key = "W" },
+		{ "key", key = "W" },
 	},
 })
 
 add({
 	name = "ui_main_page_upload_available",
 	world = world(),
-	steps = { { "key", "W" } },
+	steps = { { "key", key = "W" } },
 })
 
 add({
 	name = "ui_file_loaded_resets_range",
 	world = world(),
 	steps = {
-		{ "event", "file-loaded" },
+		{ "event", name = "file-loaded" },
 		{ "state" },
-		{ "set", "duration", nil },
-		{ "key", "W" },
-		{ "event", "file-loaded" },
+		{ "set", name = "duration", value = nil },
+		{ "key", key = "W" },
+		{ "event", name = "file-loaded" },
 		{ "state" },
 	},
 })
@@ -707,19 +722,19 @@ add({
 	name = "ui_encode_validation",
 	world = world(),
 	steps = {
-		{ "options", SYNC },
-		{ "range", -1, 2 },
-		{ "key", "W" },
-		{ "key", "e" },
-		{ "range", 1, -1 },
-		{ "key", "W" },
-		{ "key", "e" },
-		{ "range", 3, 2 },
-		{ "key", "W" },
-		{ "key", "e" },
-		{ "range", 2, 2 },
-		{ "key", "W" },
-		{ "key", "u" },
+		{ "options", values = SYNCHRONOUS },
+		{ "range", start_time = -1, end_time = 2 },
+		{ "key", key = "W" },
+		{ "key", key = "e" },
+		{ "range", start_time = 1, end_time = -1 },
+		{ "key", key = "W" },
+		{ "key", key = "e" },
+		{ "range", start_time = 3, end_time = 2 },
+		{ "key", key = "W" },
+		{ "key", key = "e" },
+		{ "range", start_time = 2, end_time = 2 },
+		{ "key", key = "W" },
+		{ "key", key = "u" },
 	},
 })
 
@@ -727,62 +742,62 @@ add({
 	name = "ui_options_page",
 	world = world(),
 	steps = {
-		{ "key", "W" },
-		{ "key", "o" },
+		{ "key", key = "W" },
+		{ "key", key = "o" },
 		{ "bindings" },
-		{ "key", "RIGHT" },
-		{ "key", "RIGHT" },
-		{ "note", "gif selected, so GIF Dither Type is visible" },
-		{ "key", "DOWN" },
-		{ "key", "LEFT" },
-		{ "key", "DOWN" },
-		{ "key", "LEFT" },
-		{ "key", "DOWN" },
-		{ "key", "RIGHT" },
-		{ "key", "DOWN" },
-		{ "key", "RIGHT" },
-		{ "key", "DOWN" },
-		{ "key", "DOWN" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "DOWN" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "LEFT" },
-		{ "key", "DOWN" },
-		{ "key", "RIGHT" },
-		{ "key", "DOWN" },
-		{ "key", "RIGHT" },
-		{ "key", "DOWN" },
-		{ "key", "RIGHT" },
-		{ "key", "DOWN" },
-		{ "key", "UP" },
-		{ "key", "ENTER" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "RIGHT" },
+		{ "note", text = "gif selected, so GIF Dither Type is visible" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "UP" },
+		{ "key", key = "ENTER" },
 		{ "dump_options" },
 	},
 })
 
 add({
 	name = "ui_options_page_cancel_and_hidden_rows",
-	world = world({ curl = { status = 1, stdout = "", error_string = "" } }),
+	world = world({ curl_check = { status = 1, stdout = "", error_string = "" } }),
 	steps = {
-		{ "options", { scale_height = 333, output_format = "nope" } },
-		{ "key", "W" },
-		{ "key", "o" },
-		{ "key", "LEFT" },
-		{ "key", "DOWN" },
-		{ "key", "RIGHT" },
-		{ "key", "ESC" },
+		{ "options", values = { scale_height = 333, output_format = "nope" } },
+		{ "key", key = "W" },
+		{ "key", key = "o" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "DOWN" },
+		{ "key", key = "RIGHT" },
+		{ "key", key = "ESC" },
 		{ "dump_options" },
 	},
 })
@@ -791,22 +806,22 @@ add({
 	name = "ui_crop_page",
 	world = world(),
 	steps = {
-		{ "key", "W" },
-		{ "key", "c" },
+		{ "key", key = "W" },
+		{ "key", key = "c" },
 		{ "bindings" },
-		{ "mouse", 100, 50 },
-		{ "key", "1" },
-		{ "mouse", 1279, 719 },
-		{ "key", "2" },
-		{ "mouse", 2000, -5 },
-		{ "key", "2" },
-		{ "key", "r" },
-		{ "mouse", 640, 360 },
-		{ "key", "2" },
-		{ "key", "ENTER" },
+		{ "mouse", x = 100, y = 50 },
+		{ "key", key = "1" },
+		{ "mouse", x = 1279, y = 719 },
+		{ "key", key = "2" },
+		{ "mouse", x = 2000, y = -5 },
+		{ "key", key = "2" },
+		{ "key", key = "r" },
+		{ "mouse", x = 640, y = 360 },
+		{ "key", key = "2" },
+		{ "key", key = "ENTER" },
 		{ "state" },
-		{ "key", "c" },
-		{ "key", "ESC" },
+		{ "key", key = "c" },
+		{ "key", key = "ESC" },
 		{ "state" },
 	},
 })
@@ -814,31 +829,31 @@ add({
 add({
 	name = "ui_crop_page_letterboxed_rotated",
 	world = world({
-		osd_w = 1280,
-		osd_h = 1024,
-		props = { ["video-out-params"] = { w = 1920, h = 800, dw = 1920, dh = 800 }, ["video-rotate"] = 90 },
+		osd_width = 1280,
+		osd_height = 1024,
+		properties = { ["video-out-params"] = { w = 1920, h = 800, dw = 1920, dh = 800 }, ["video-rotate"] = 90 },
 	}),
 	steps = {
-		{ "key", "W" },
-		{ "key", "c" },
-		{ "mouse", 300, 10 },
-		{ "key", "1" },
-		{ "mouse", 900, 1000 },
-		{ "key", "2" },
-		{ "key", "ENTER" },
+		{ "key", key = "W" },
+		{ "key", key = "c" },
+		{ "mouse", x = 300, y = 10 },
+		{ "key", key = "1" },
+		{ "mouse", x = 900, y = 1000 },
+		{ "key", key = "2" },
+		{ "key", key = "ENTER" },
 		{ "state" },
 	},
 })
 
 add({
 	name = "ui_preview_page",
-	world = world({ props = { vf = { { name = "hflip" } } } }),
+	world = world({ properties = { vf = { { name = "hflip" } } } }),
 	steps = {
-		{ "range", 2, 4, { x = 0, y = 10, w = 100, h = 50 } },
-		{ "key", "W" },
-		{ "key", "p" },
+		{ "range", start_time = 2, end_time = 4, region = { x = 0, y = 10, w = 100, h = 50 } },
+		{ "key", key = "W" },
+		{ "key", key = "p" },
 		{ "bindings" },
-		{ "key", "ESC" },
+		{ "key", key = "ESC" },
 	},
 })
 
@@ -848,25 +863,28 @@ add({
 	name = "upload_catbox_success",
 	world = world({ file_size = 3456789 }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false, catbox_userhash = "abc123" }) },
-		{ "range", 0, 2 },
-		{ "key", "W" },
-		{ "key", "u" },
+		{
+			"options",
+			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, catbox_userhash = "abc123" }),
+		},
+		{ "range", start_time = 0, end_time = 2 },
+		{ "key", key = "W" },
+		{ "key", key = "u" },
 		{ "bindings" },
-		{ "file", "/tmp/lua_tmp2", "##          12.0%\r#####        45.5%" },
+		{ "file", path = "/tmp/lua_tmp2", content = "##          12.0%\r#####        45.5%" },
 		{ "timers" },
 		{ "timers" },
-		{ "async" },
-		{ "key", "c" },
-		{ "key", "o" },
-		{ "key", "ESC" },
+		{ "run_pending_commands" },
+		{ "key", key = "c" },
+		{ "key", key = "o" },
+		{ "key", key = "ESC" },
 	},
 })
 
 add({
 	name = "upload_litterbox_failure_retry_options",
 	world = world({
-		props = {
+		properties = {
 			path = "/videos/a,b;c.mkv",
 			filename = "a,b;c.mkv",
 			["filename/no-ext"] = "a,b;c",
@@ -878,7 +896,7 @@ add({
 	steps = {
 		{
 			"options",
-			merge(SYNC, {
+			values = merge(SYNCHRONOUS, {
 				output_format = "avc",
 				twopass = false,
 				upload_host = "litterbox",
@@ -887,13 +905,13 @@ add({
 				upload_curl_path = "/opt/curl",
 			}),
 		},
-		{ "range", 0, 2 },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
-		{ "async" },
-		{ "key", "c" },
-		{ "key", "r" },
-		{ "async" },
-		{ "key", "o" },
+		{ "run_pending_commands" },
+		{ "key", key = "c" },
+		{ "key", key = "r" },
+		{ "run_pending_commands" },
+		{ "key", key = "o" },
 	},
 })
 
@@ -901,11 +919,14 @@ add({
 	name = "upload_cancel",
 	world = world(),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false, open_after_upload = true }) },
-		{ "range", 0, 2 },
+		{
+			"options",
+			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, open_after_upload = true }),
+		},
+		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
-		{ "key", "ESC" },
-		{ "async" },
+		{ "key", key = "ESC" },
+		{ "run_pending_commands" },
 		{ "timers" },
 	},
 })
@@ -914,11 +935,14 @@ add({
 	name = "upload_done_open_and_clipboard_fallback",
 	world = world({ clipboard_property = false }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false, open_after_upload = true }) },
-		{ "range", 0, 2 },
+		{
+			"options",
+			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, open_after_upload = true }),
+		},
+		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
-		{ "async" },
-		{ "key", "c" },
+		{ "run_pending_commands" },
+		{ "key", key = "c" },
 	},
 })
 
@@ -927,35 +951,38 @@ add({
 	world = world({
 		platform = "windows",
 		clipboard_property = false,
-		props = {
+		properties = {
 			path = "C:\\Videos\\clip.mkv",
 			filename = "clip.mkv",
 			["filename/no-ext"] = "clip",
 			["stream-open-filename"] = "C:\\Videos\\clip.mkv",
 		},
 		files = { ["C:\\Videos\\clip.mkv"] = "source" },
-		env = { USERPROFILE = "C:\\Users\\tester" },
+		environment = { USERPROFILE = "C:\\Users\\tester" },
 	}),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false, open_after_upload = true }) },
-		{ "range", 0, 2 },
+		{
+			"options",
+			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, open_after_upload = true }),
+		},
+		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
-		{ "async" },
+		{ "run_pending_commands" },
 	},
 })
 
 add({
 	name = "upload_curl_missing",
-	world = world({ curl = { status = -3, stdout = "", error_string = "init" } }),
-	steps = { { "range", 0, 2 }, { "upload" } },
+	world = world({ curl_check = { status = -3, stdout = "", error_string = "init" } }),
+	steps = { { "range", start_time = 0, end_time = 2 }, { "upload" } },
 })
 
 add({
 	name = "upload_encode_fails",
 	world = world({ encode_status = 1 }),
 	steps = {
-		{ "options", merge(SYNC, { output_format = "avc", twopass = false }) },
-		{ "range", 0, 2 },
+		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
 	},
 })

@@ -7,5 +7,5 @@
 		"build",
 		"tests/integration"
 	],
-	"diagnostics.globals": ["GOLDEN_DIR"]
+	"diagnostics.globals": ["GOLDEN_DIRECTORY"]
 }

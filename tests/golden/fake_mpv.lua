@@ -2,9 +2,9 @@
 --
 -- It loads a built webm.lua into a sandbox whose mp, mp.msg, mp.utils,
 -- mp.options and mp.assdraw modules, along with os and io, are fakes. Every
--- observable side effect the script has (subprocess argv, OSD text, emitted
--- script-messages, properties set, files written or removed) is appended to
--- a transcript. The transcript is what the golden files pin down.
+-- observable side effect the script has (subprocess arguments, OSD text,
+-- emitted script-messages, properties set, files written or removed) is
+-- appended to a transcript. The transcript is what the golden files pin down.
 --
 -- Only the script's external surface is driven: key presses, script-messages
 -- and events. Internal functions are never called directly, so the same
@@ -12,27 +12,33 @@
 --
 -- Deliberate simplifications (see README.md): properties are a plain table,
 -- observers fire synchronously and only for properties a scenario changes,
--- async commands and timers run only when a scenario asks.
+-- asynchronous commands and timers run only when a scenario asks.
 
-local json = dofile(GOLDEN_DIR .. "json.lua")
+local json = dofile(GOLDEN_DIRECTORY .. "json.lua")
 
-local M = {}
+local fake_mpv = {}
 
--- Fixed clock for os.date/os.time: 2024-03-09 13:45:30 UTC.
-local FIXED_TIME = 1709991930
+-- Fixed clock for os.date and os.time: 2024-03-09 13:45:30 UTC.
+local FIXED_UNIX_TIME = 1709991930
+local DEFAULT_OSD_WIDTH = 1280
+local DEFAULT_OSD_HEIGHT = 720
+local EXIT_SUCCESS = 0
+-- What mpv reports for a subprocess it killed.
+local KILLED_STATUS = -2
+local NOT_FOUND = "property not found"
 
 local World = {}
 World.__index = World
 
-local function shallow_copy(t)
-	local out = {}
-	for k, v in pairs(t or {}) do
-		out[k] = v
+local function shallow_copy(original)
+	local copy = {}
+	for key, value in pairs(original or {}) do
+		copy[key] = value
 	end
-	return out
+	return copy
 end
 
--- Render a property value the way mpv's string conversion would.
+-- Renders a property value the way mpv's string conversion would.
 local function property_to_string(value)
 	local kind = type(value)
 	if kind == "boolean" then
@@ -48,34 +54,44 @@ local function property_to_string(value)
 	return json.encode(value)
 end
 
-function M.new(cfg)
+-- Joins all arguments with a separator, like mpv's message functions do.
+local function join_arguments(separator, ...)
+	local parts = {}
+	for index = 1, select("#", ...) do
+		parts[#parts + 1] = tostring((select(index, ...)))
+	end
+	return table.concat(parts, separator)
+end
+
+function fake_mpv.new(settings)
 	local self = setmetatable({}, World)
-	self.cfg = cfg
-	self.platform = cfg.platform or "unix"
+	self.settings = settings
+	self.platform = settings.platform or "unix"
 	self.lines = {}
-	self.props = shallow_copy(cfg.props)
-	self.osd_props = shallow_copy(cfg.osd_props)
-	self.fs = shallow_copy(cfg.files)
-	self.env = shallow_copy(cfg.env)
-	self.conf = cfg.conf or {}
-	self.osd_w = cfg.osd_w or 1280
-	self.osd_h = cfg.osd_h or 720
+	self.properties = shallow_copy(settings.properties)
+	self.osd_properties = shallow_copy(settings.osd_properties)
+	self.files = shallow_copy(settings.files)
+	self.environment = shallow_copy(settings.environment)
+	self.conf_file = settings.conf_file or {}
+	self.osd_width = settings.osd_width or DEFAULT_OSD_WIDTH
+	self.osd_height = settings.osd_height or DEFAULT_OSD_HEIGHT
 	self.mouse_x, self.mouse_y = 0, 0
 	self.script_messages = {}
 	self.key_bindings = {}
 	self.forced_bindings = {}
 	self.events = {}
 	self.observers = {}
-	self.pending_async = {}
+	self.pending_commands = {}
 	self.timers = {}
-	self.next_tmp = 0
-	self.next_handle = 0
-	self.quiet = 0
+	self.temporary_file_count = 0
+	self.command_handle_count = 0
+	-- Above zero, transcript lines are dropped. Script errors are always kept.
+	self.quiet_depth = 0
 	return self
 end
 
 function World:log(line)
-	if self.quiet == 0 then
+	if self.quiet_depth == 0 then
 		self.lines[#self.lines + 1] = line
 	end
 end
@@ -89,147 +105,157 @@ end
 
 -- Paths -------------------------------------------------------------------
 
-function World:is_absolute(p)
+function World:is_absolute(path)
 	if self.platform == "windows" then
-		return p:match("^[A-Za-z]:[/\\]") ~= nil or p:match("^[/\\]") ~= nil
+		return path:match("^[A-Za-z]:[/\\]") ~= nil or path:match("^[/\\]") ~= nil
 	end
-	return p:sub(1, 1) == "/"
+	return path:sub(1, 1) == "/"
 end
 
-function World:basename_start(p)
+-- Where the last path component starts.
+function World:basename_start(path)
 	local pattern = self.platform == "windows" and "^.*()[/\\:]" or "^.*()/"
-	local last = p:match(pattern)
-	return last and last + 1 or 1
+	local last_separator = path:match(pattern)
+	return last_separator and last_separator + 1 or 1
 end
 
--- mp_dirname / mp_basename semantics.
-function World:split_path(p)
-	local start = self:basename_start(p)
-	local dir = p:sub(1, start - 1)
-	if dir == "" then
-		dir = "."
+-- Same results as mpv's mp_dirname and mp_basename.
+function World:split_path(path)
+	local start = self:basename_start(path)
+	local directory = path:sub(1, start - 1)
+	if directory == "" then
+		directory = "."
 	end
-	return dir, p:sub(start)
+	return directory, path:sub(start)
 end
 
--- mp_path_join semantics.
-function World:join_path(p1, p2)
-	if p1 == "" then
-		return p2
+-- Same results as mpv's mp_path_join.
+function World:join_path(first, second)
+	if first == "" then
+		return second
 	end
-	if p2 == "" then
-		return p1
+	if second == "" then
+		return first
 	end
-	if self:is_absolute(p2) then
-		return p2
+	if self:is_absolute(second) then
+		return second
 	end
-	local last = p1:sub(-1)
-	local has_sep = last == "/" or (self.platform == "windows" and (last == "\\" or last == ":"))
-	return p1 .. (has_sep and "" or "/") .. p2
+	local last_character = first:sub(-1)
+	local ends_with_separator = last_character == "/"
+		or (self.platform == "windows" and (last_character == "\\" or last_character == ":"))
+	return first .. (ends_with_separator and "" or "/") .. second
 end
 
 -- Properties ----------------------------------------------------------------
 
-local NOT_FOUND = "property not found"
-
-function World:get_native(name)
-	return self.props[name]
-end
-
-function World:set_prop(name, value)
-	self.props[name] = value
-	for _, obs in ipairs(self.observers) do
-		if obs.name == name then
-			obs.fn(name, value)
+function World:set_property(name, value)
+	self.properties[name] = value
+	for _, observer in ipairs(self.observers) do
+		if observer.name == name then
+			observer.callback(name, value)
 		end
 	end
 end
 
 -- Subprocess responders ---------------------------------------------------
 
-local function has_arg(args, wanted)
-	for _, a in ipairs(args) do
-		if a == wanted then
+local function has_argument(arguments, wanted)
+	for _, argument in ipairs(arguments) do
+		if argument == wanted then
 			return true
 		end
 	end
 	return false
 end
 
-local function find_arg_value(args, prefix)
-	for _, a in ipairs(args) do
-		if a:sub(1, #prefix) == prefix then
-			return a:sub(#prefix + 1)
+local function argument_value(arguments, prefix)
+	for _, argument in ipairs(arguments) do
+		if argument:sub(1, #prefix) == prefix then
+			return argument:sub(#prefix + 1)
 		end
 	end
 end
 
 -- A fake libvpx first-pass log: two frame records plus the aggregate record,
--- 18 doubles each. The bytes are a fixed pattern; only the duration field is
--- interpreted, and the patcher rewrites it.
-local function fake_vp8_stats_bytes()
+-- 18 doubles of 8 bytes each. The bytes are a fixed pattern. Only the
+-- duration field is interpreted, and the patcher rewrites it.
+local VP8_RECORD_COUNT = 3
+local VP8_RECORD_SIZE = 18 * 8
+local BYTE_VALUES = 256
+
+local function fake_vp8_log_bytes()
 	local bytes = {}
-	for i = 1, 3 * 18 * 8 do
-		bytes[i] = string.char((i * 37) % 256)
+	for position = 1, VP8_RECORD_COUNT * VP8_RECORD_SIZE do
+		bytes[position] = string.char((position * 37) % BYTE_VALUES)
 	end
 	return table.concat(bytes)
 end
 
-local B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+-- Base64 encoding, written separately from the script's own so the test
+-- does not trust the code it checks. Every 3 bytes become 4 characters of 6
+-- bits each.
+local BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+local BASE64_VALUES = 64
+
 local function base64(data)
-	local out = {}
-	for i = 1, #data, 3 do
-		local a, b, c = data:byte(i, i + 2)
-		local n = a * 65536 + (b or 0) * 256 + (c or 0)
-		local chars = {}
-		for j = 3, 0, -1 do
-			local idx = math.floor(n / 64 ^ j) % 64
-			chars[#chars + 1] = B64:sub(idx + 1, idx + 1)
+	local groups = {}
+	for start = 1, #data, 3 do
+		local first, second, third = data:byte(start, start + 2)
+		local combined = first * BYTE_VALUES * BYTE_VALUES + (second or 0) * BYTE_VALUES + (third or 0)
+		local characters = {}
+		for shift = 3, 0, -1 do
+			local value = math.floor(combined / BASE64_VALUES ^ shift) % BASE64_VALUES
+			characters[#characters + 1] = BASE64_ALPHABET:sub(value + 1, value + 1)
 		end
-		if not b then
-			chars[3], chars[4] = "=", "="
-		elseif not c then
-			chars[4] = "="
+		if not second then
+			characters[3], characters[4] = "=", "="
+		elseif not third then
+			characters[4] = "="
 		end
-		out[#out + 1] = table.concat(chars)
+		groups[#groups + 1] = table.concat(characters)
 	end
-	return table.concat(out)
+	return table.concat(groups)
 end
 
-function World:run_subprocess(args)
-	local cfg = self.cfg
-	if args[1] == "mpv" and args[2] == "--no-config" and args[3] == "--version" then
-		return shallow_copy(cfg.encoder_check or { status = 0, stdout = "mpv 0.40.0\n", error_string = "" })
+local function result(status, output)
+	return { status = status, stdout = output or "", error_string = "" }
+end
+
+function World:run_subprocess(arguments)
+	local settings = self.settings
+	if arguments[1] == "mpv" and arguments[2] == "--no-config" and arguments[3] == "--version" then
+		return shallow_copy(settings.encoder_check or result(EXIT_SUCCESS, "mpv 0.40.0\n"))
 	end
-	if args[2] == "--version" then
+	if arguments[2] == "--version" then
 		-- The curl availability probe.
-		return shallow_copy(cfg.curl or { status = 0, stdout = "curl 8.0.0\n", error_string = "" })
+		return shallow_copy(settings.curl_check or result(EXIT_SUCCESS, "curl 8.0.0\n"))
 	end
-	if args[1] == "mpv" then
-		local out = find_arg_value(args, "--o=")
-		self.last_out = out
-		if has_arg(args, "--ovcopts-add=flags=+pass1") then
-			if cfg.first_pass_status and cfg.first_pass_status ~= 0 then
-				return { status = cfg.first_pass_status, stdout = "", error_string = "" }
+	if arguments[1] == "mpv" then
+		local output_path = argument_value(arguments, "--o=")
+		self.last_output_path = output_path
+		if has_argument(arguments, "--ovcopts-add=flags=+pass1") then
+			if settings.first_pass_status and settings.first_pass_status ~= EXIT_SUCCESS then
+				return result(settings.first_pass_status)
 			end
-			if out and find_arg_value(args, "--ovc=") == "libvpx" then
-				self.fs[out .. "-video-pass1.log"] = base64(fake_vp8_stats_bytes())
+			if output_path and argument_value(arguments, "--ovc=") == "libvpx" then
+				self.files[output_path .. "-video-pass1.log"] = base64(fake_vp8_log_bytes())
 			end
-			return { status = 0, stdout = "", error_string = "" }
+			return result(EXIT_SUCCESS)
 		end
-		local status = cfg.encode_status or 0
-		if status == 0 and out then
-			self.fs[out] = "encoded"
+		local status = settings.encode_status or EXIT_SUCCESS
+		if status == EXIT_SUCCESS and output_path then
+			self.files[output_path] = "encoded"
 		end
-		return { status = status, stdout = "", error_string = "" }
+		return result(status)
 	end
-	return { status = 0, stdout = "", error_string = "" }
+	return result(EXIT_SUCCESS)
 end
 
--- Popen'd encodes (progress display). Lines mimic mpv's terminal output.
-function World:popen_output(command_line)
-	if self.cfg.popen_lines then
-		return self.cfg.popen_lines
+-- Output of encodes run through io.popen for the progress page. The lines
+-- mimic mpv's terminal output.
+function World:encoder_output()
+	if self.settings.encoder_output_lines then
+		return self.settings.encoder_output_lines
 	end
 	return {
 		"[encode] Opening output file",
@@ -240,22 +266,23 @@ function World:popen_output(command_line)
 	}
 end
 
--- Async subprocess (uploads, clipboard tools).
-function World:async_result(t)
-	local args = t.args or {}
-	if args[1] == (self.cfg.curl_path or "curl") then
-		local response_path = args[(function()
-			for i, a in ipairs(args) do
-				if a == "-o" then
-					return i + 1
-				end
+-- Results of asynchronous subprocesses: uploads and clipboard tools.
+function World:asynchronous_result(command)
+	local arguments = command.args or {}
+	if arguments[1] == (self.settings.curl_path or "curl") then
+		local output_flag_index = nil
+		for index, argument in ipairs(arguments) do
+			if argument == "-o" then
+				output_flag_index = index
 			end
-		end)()]
-		local upload = self.cfg.upload or { status = 0, http = "200", body = "https://files.catbox.moe/abc123.mp4\n" }
-		if response_path then
-			self.fs[response_path] = upload.body
 		end
-		return upload.status == 0,
+		local response_path = output_flag_index and arguments[output_flag_index + 1]
+		local upload = self.settings.upload
+			or { status = EXIT_SUCCESS, http = "200", body = "https://files.catbox.moe/abc123.mp4\n" }
+		if response_path then
+			self.files[response_path] = upload.body
+		end
+		return upload.status == EXIT_SUCCESS,
 			{
 				status = upload.status,
 				stdout = upload.http,
@@ -264,7 +291,7 @@ function World:async_result(t)
 			},
 			nil
 	end
-	return true, { status = 0, stdout = "", error_string = "" }, nil
+	return true, result(EXIT_SUCCESS), nil
 end
 
 -- Module construction -----------------------------------------------------
@@ -273,70 +300,70 @@ function World:make_mp()
 	local world = self
 	local mp = {}
 
-	function mp.get_property(name, def)
-		local v = world.props[name]
-		if v == nil then
-			return def, NOT_FOUND
+	function mp.get_property(name, default)
+		local value = world.properties[name]
+		if value == nil then
+			return default, NOT_FOUND
 		end
-		return property_to_string(v)
+		return property_to_string(value)
 	end
 
-	function mp.get_property_osd(name, def)
-		local v = world.osd_props[name]
-		if v == nil and world.props[name] ~= nil then
-			v = property_to_string(world.props[name])
+	function mp.get_property_osd(name, default)
+		local value = world.osd_properties[name]
+		if value == nil and world.properties[name] ~= nil then
+			value = property_to_string(world.properties[name])
 		end
-		if v == nil then
-			if def == nil then
+		if value == nil then
+			if default == nil then
 				return "", NOT_FOUND
 			end
-			return def, NOT_FOUND
+			return default, NOT_FOUND
 		end
-		return v
+		return value
 	end
 
-	function mp.get_property_native(name, def)
-		local v = world.props[name]
-		if v == nil then
-			return def, NOT_FOUND
+	function mp.get_property_native(name, default)
+		local value = world.properties[name]
+		if value == nil then
+			return default, NOT_FOUND
 		end
-		if type(v) == "table" then
+		if type(value) == "table" then
 			-- mpv hands out a fresh table on every call.
-			return json.decode(json.encode(v))
+			return json.decode(json.encode(value))
 		end
-		return v
+		return value
 	end
 
-	function mp.get_property_number(name, def)
-		local v = world.props[name]
-		if type(v) == "string" then
-			v = tonumber(v)
+	function mp.get_property_number(name, default)
+		local value = world.properties[name]
+		if type(value) == "string" then
+			value = tonumber(value)
 		end
-		if type(v) ~= "number" then
-			return def, NOT_FOUND
+		if type(value) ~= "number" then
+			return default, NOT_FOUND
 		end
-		return v
+		return value
 	end
 
-	function mp.get_property_bool(name, def)
-		local v = world.props[name]
-		if v == "yes" then
+	function mp.get_property_bool(name, default)
+		local value = world.properties[name]
+		if value == "yes" then
 			return true
-		elseif v == "no" then
+		elseif value == "no" then
 			return false
-		elseif type(v) == "boolean" then
-			return v
+		elseif type(value) == "boolean" then
+			return value
 		end
-		return def, NOT_FOUND
+		return default, NOT_FOUND
 	end
 
 	local function set(kind, name, value)
-		if name == "clipboard/text" and world.cfg.clipboard_property == false then
+		if name == "clipboard/text" and world.settings.clipboard_property == false then
 			world:log(kind .. ": " .. name .. " (rejected)")
 			return nil, NOT_FOUND
 		end
 		world:log(kind .. ": " .. name .. " = " .. json.encode(value))
-		world.props[name] = value
+		world.properties[name] = value
 		return true
 	end
 	function mp.set_property(name, value)
@@ -352,14 +379,14 @@ function World:make_mp()
 		return set("set_property_bool", name, value)
 	end
 
-	function mp.observe_property(name, kind, fn)
-		world.observers[#world.observers + 1] = { name = name, fn = fn }
+	function mp.observe_property(name, kind, callback)
+		world.observers[#world.observers + 1] = { name = name, callback = callback }
 	end
-	function mp.unobserve_property(fn)
+	function mp.unobserve_property(callback)
 		local kept = {}
-		for _, obs in ipairs(world.observers) do
-			if obs.fn ~= fn then
-				kept[#kept + 1] = obs
+		for _, observer in ipairs(world.observers) do
+			if observer.callback ~= callback then
+				kept[#kept + 1] = observer
 			end
 		end
 		world.observers = kept
@@ -369,20 +396,20 @@ function World:make_mp()
 		world:log("osd_message(" .. tostring(duration) .. "): " .. tostring(text))
 	end
 
-	function mp.set_osd_ass(w, h, text)
+	function mp.set_osd_ass(width, height, text)
 		if text == "" then
-			world:log(string.format("osd_ass %dx%d: <clear>", w, h))
+			world:log(string.format("osd_ass %dx%d: <clear>", width, height))
 			return
 		end
 		local lines = {}
 		for line in (text .. "\n"):gmatch("(.-)\n") do
 			lines[#lines + 1] = line
 		end
-		world:log_block(string.format("osd_ass %dx%d:", w, h), lines)
+		world:log_block(string.format("osd_ass %dx%d:", width, height), lines)
 	end
 
 	function mp.get_osd_size()
-		return world.osd_w, world.osd_h
+		return world.osd_width, world.osd_height
 	end
 
 	function mp.get_mouse_pos()
@@ -390,89 +417,91 @@ function World:make_mp()
 	end
 
 	function mp.commandv(...)
-		local args = { ... }
-		if args[1] == "script-message" then
-			world:log("event: " .. table.concat(args, " ", 2))
+		local arguments = { ... }
+		if arguments[1] == "script-message" then
+			world:log("event: " .. table.concat(arguments, " ", 2))
 			return true
 		end
-		world:log("commandv: " .. json.encode(args))
+		world:log("commandv: " .. json.encode(arguments))
 		return true
 	end
 
-	function mp.command(cmd)
-		world:log("command: " .. cmd)
+	function mp.command(command)
+		world:log("command: " .. command)
 		return true
 	end
 
-	function mp.command_native(t)
-		world:log("command_native: " .. json.encode(t))
-		if t[1] == "dump_cache" then
-			world.fs[t[4]] = "cache"
+	function mp.command_native(command)
+		world:log("command_native: " .. json.encode(command))
+		if command[1] == "dump_cache" then
+			local dump_path = command[4]
+			world.files[dump_path] = "cache"
 		end
 		return {}
 	end
 
-	function mp.command_native_async(t, cb)
-		world.next_handle = world.next_handle + 1
-		local handle = { id = world.next_handle }
-		local copy = shallow_copy(t)
-		local args = copy.args
-		copy.args = nil
-		world:log_block("command_native_async #" .. handle.id .. " " .. json.encode(copy) .. ":", args or {})
-		world.pending_async[#world.pending_async + 1] = { handle = handle, t = t, cb = cb }
+	function mp.command_native_async(command, callback)
+		world.command_handle_count = world.command_handle_count + 1
+		local handle = { id = world.command_handle_count }
+		local options = shallow_copy(command)
+		local arguments = options.args
+		options.args = nil
+		world:log_block("command_native_async #" .. handle.id .. " " .. json.encode(options) .. ":", arguments or {})
+		world.pending_commands[#world.pending_commands + 1] =
+			{ handle = handle, command = command, callback = callback }
 		return handle
 	end
 
 	function mp.abort_async_command(handle)
 		world:log("abort_async_command #" .. handle.id)
-		for _, p in ipairs(world.pending_async) do
-			if p.handle == handle then
-				p.aborted = true
+		for _, pending in ipairs(world.pending_commands) do
+			if pending.handle == handle then
+				pending.aborted = true
 			end
 		end
 	end
 
-	local function make_timer(seconds, fn, periodic)
-		local timer = { seconds = seconds, fn = fn, periodic = periodic, active = true }
-		function timer.kill(t)
-			t.active = false
+	local function make_timer(seconds, callback, periodic)
+		local timer = { seconds = seconds, callback = callback, periodic = periodic, active = true }
+		function timer.kill(this_timer)
+			this_timer.active = false
 		end
 		timer.stop = timer.kill
-		function timer.resume(t)
-			t.active = true
+		function timer.resume(this_timer)
+			this_timer.active = true
 		end
-		function timer.is_enabled(t)
-			return t.active
+		function timer.is_enabled(this_timer)
+			return this_timer.active
 		end
 		world.timers[#world.timers + 1] = timer
 		return timer
 	end
-	function mp.add_periodic_timer(seconds, fn)
-		return make_timer(seconds, fn, true)
+	function mp.add_periodic_timer(seconds, callback)
+		return make_timer(seconds, callback, true)
 	end
-	function mp.add_timeout(seconds, fn)
-		return make_timer(seconds, fn, false)
+	function mp.add_timeout(seconds, callback)
+		return make_timer(seconds, callback, false)
 	end
 
-	function mp.add_key_binding(key, name, fn, flags)
+	function mp.add_key_binding(key, name, callback, flags)
 		world:log("add_key_binding: " .. tostring(key) .. " " .. tostring(name) .. " " .. json.encode(flags or {}))
-		world.key_bindings[key] = fn
+		world.key_bindings[key] = callback
 	end
-	function mp.add_forced_key_binding(key, name, fn, flags)
-		world.forced_bindings[name or key] = { key = key, fn = fn, flags = flags }
+	function mp.add_forced_key_binding(key, name, callback, flags)
+		world.forced_bindings[name or key] = { key = key, callback = callback, flags = flags }
 	end
 	function mp.remove_key_binding(name)
 		world.forced_bindings[name] = nil
 	end
 
-	function mp.register_event(name, fn)
+	function mp.register_event(name, callback)
 		world:log("register_event: " .. name)
 		world.events[name] = world.events[name] or {}
-		table.insert(world.events[name], fn)
+		table.insert(world.events[name], callback)
 	end
 
-	function mp.register_script_message(name, fn)
-		world.script_messages[name] = fn
+	function mp.register_script_message(name, callback)
+		world.script_messages[name] = callback
 	end
 
 	function mp.get_time()
@@ -488,29 +517,24 @@ end
 
 function World:make_msg()
 	local world = self
-	local msg = {}
-	local function logger(level, record)
+	local messages = {}
+	local function logger(level, recorded)
 		return function(...)
-			if not record then
-				return
+			if recorded then
+				world:log("msg." .. level .. ": " .. join_arguments(" ", ...))
 			end
-			local parts = {}
-			for i = 1, select("#", ...) do
-				parts[#parts + 1] = tostring((select(i, ...)))
-			end
-			world:log("msg." .. level .. ": " .. table.concat(parts, " "))
 		end
 	end
-	msg.fatal = logger("fatal", true)
-	msg.error = logger("error", true)
-	msg.warn = logger("warn", true)
-	msg.info = logger("info", true)
-	-- Verbose/debug output is diagnostics, not behavior; the command lines it
-	-- prints are already captured from the subprocess calls themselves.
-	msg.verbose = logger("verbose", false)
-	msg.debug = logger("debug", false)
-	msg.trace = logger("trace", false)
-	return msg
+	messages.fatal = logger("fatal", true)
+	messages.error = logger("error", true)
+	messages.warn = logger("warn", true)
+	messages.info = logger("info", true)
+	-- Verbose and debug output is diagnostics, not behavior. The command lines
+	-- it prints are already captured from the subprocess calls themselves.
+	messages.verbose = logger("verbose", false)
+	messages.debug = logger("debug", false)
+	messages.trace = logger("trace", false)
+	return messages
 end
 
 function World:make_utils()
@@ -518,94 +542,96 @@ function World:make_utils()
 	local utils = {}
 
 	function utils.file_info(path)
-		if world.fs[path] ~= nil then
-			if world.fs[path] == true then
-				return { is_dir = true, is_file = false, size = 0 }
-			end
-			return { is_file = true, is_dir = false, size = world.cfg.file_size or #world.fs[path] }
+		local content = world.files[path]
+		if content == nil then
+			return nil, "No such file or directory"
 		end
-		return nil, "No such file or directory"
+		-- Directories are stored as true.
+		if content == true then
+			return { is_dir = true, is_file = false, size = 0 }
+		end
+		return { is_file = true, is_dir = false, size = world.settings.file_size or #content }
 	end
 
-	function utils.split_path(p)
-		return world:split_path(p)
+	function utils.split_path(path)
+		return world:split_path(path)
 	end
 
-	function utils.join_path(a, b)
-		return world:join_path(a, b)
+	function utils.join_path(first, second)
+		return world:join_path(first, second)
 	end
 
-	function utils.subprocess(t)
+	function utils.subprocess(command)
 		local flags = {}
-		for k, v in pairs(t) do
-			if k ~= "args" then
-				flags[k] = v
+		for name, value in pairs(command) do
+			if name ~= "args" then
+				flags[name] = value
 			end
 		end
-		world:log_block("subprocess " .. json.encode(flags) .. ":", t.args)
-		local res = world:run_subprocess(t.args)
-		if res.error_string and res.error_string ~= "" then
-			res.error = res.error_string
+		world:log_block("subprocess " .. json.encode(flags) .. ":", command.args)
+		local outcome = world:run_subprocess(command.args)
+		if outcome.error_string and outcome.error_string ~= "" then
+			outcome.error = outcome.error_string
 		end
-		return res
+		return outcome
 	end
 
-	function utils.subprocess_detached(t)
-		world:log_block("subprocess_detached:", t.args)
+	function utils.subprocess_detached(command)
+		world:log_block("subprocess_detached:", command.args)
 	end
 
-	function utils.parse_json(s)
-		return json.decode(s)
+	function utils.parse_json(text)
+		return json.decode(text)
 	end
 
-	function utils.format_json(v)
-		return json.encode(v)
+	function utils.format_json(value)
+		return json.encode(value)
 	end
 
 	function utils.getcwd()
-		return world.cfg.cwd or "/home/tester"
+		return world.settings.working_directory or "/home/tester"
 	end
 
 	return utils
 end
 
--- read_options: apply "key=value" overrides the way mp.options converts them
--- to the type of each default.
+-- read_options: applies webm.conf entries the way mp.options converts them to
+-- the type of each default.
 function World:make_options()
 	local world = self
 	local options = {}
-	function options.read_options(tbl, identifier, on_update)
+	function options.read_options(script_options, identifier, on_update)
 		-- Keep a reference so scenarios can dump the effective options. The
 		-- script reads and writes this same table at runtime.
-		world.options_table = tbl
+		world.options_table = script_options
 		world:log("read_options: identifier=" .. tostring(identifier))
-		local keys = {}
-		for k in pairs(world.conf) do
-			keys[#keys + 1] = k
+		local names = {}
+		for name in pairs(world.conf_file) do
+			names[#names + 1] = name
 		end
-		table.sort(keys)
-		for _, key in ipairs(keys) do
-			local raw = world.conf[key]
-			local default = tbl[key]
+		table.sort(names)
+		for _, name in ipairs(names) do
+			local text = world.conf_file[name]
+			local default = script_options[name]
 			local kind = type(default)
 			if default == nil then
-				world:log("options: unknown key " .. key .. ", ignoring")
+				world:log("options: unknown key " .. name .. ", ignoring")
 			elseif kind == "boolean" then
-				if raw == "yes" then
-					tbl[key] = true
-				elseif raw == "no" then
-					tbl[key] = false
+				if text == "yes" then
+					script_options[name] = true
+				elseif text == "no" then
+					script_options[name] = false
 				else
-					world:log("options: bad boolean for " .. key .. ": " .. raw)
+					world:log("options: bad boolean for " .. name .. ": " .. text)
 				end
 			elseif kind == "number" then
-				if tonumber(raw) then
-					tbl[key] = tonumber(raw)
+				if tonumber(text) then
+					script_options[name] = tonumber(text)
 				else
-					world:log("options: bad number for " .. key .. ": " .. raw)
+					world:log("options: bad number for " .. name .. ": " .. text)
 				end
 			else
-				tbl[key] = raw
+				script_options[name] = text
 			end
 		end
 	end
@@ -613,54 +639,57 @@ function World:make_options()
 end
 
 -- Same behavior as mpv's player/lua/assdraw.lua for the calls the script uses.
+-- Drawing commands are written at 2^(scale - 1) times the given coordinates.
+local ASSDRAW_DEFAULT_SCALE = 4
+
 local function make_assdraw()
-	local ass_mt = {}
-	ass_mt.__index = ass_mt
+	local Drawing = {}
+	Drawing.__index = Drawing
 
 	local function ass_new()
-		return setmetatable({ scale = 4, text = "" }, ass_mt)
+		return setmetatable({ scale = ASSDRAW_DEFAULT_SCALE, text = "" }, Drawing)
 	end
 
-	function ass_mt.new_event(ass)
-		if #ass.text > 0 then
-			ass.text = ass.text .. "\n"
+	function Drawing.new_event(drawing)
+		if #drawing.text > 0 then
+			drawing.text = drawing.text .. "\n"
 		end
 	end
-	function ass_mt.draw_start(ass)
-		ass.text = string.format("%s{\\p%d}", ass.text, ass.scale)
+	function Drawing.draw_start(drawing)
+		drawing.text = string.format("%s{\\p%d}", drawing.text, drawing.scale)
 	end
-	function ass_mt.draw_stop(ass)
-		ass.text = ass.text .. "{\\p0}"
+	function Drawing.draw_stop(drawing)
+		drawing.text = drawing.text .. "{\\p0}"
 	end
-	function ass_mt.coord(ass, x, y)
-		local scale = 2 ^ (ass.scale - 1)
-		ass.text = string.format("%s %d %d", ass.text, math.ceil(x * scale), math.ceil(y * scale))
+	function Drawing.coord(drawing, x, y)
+		local multiplier = 2 ^ (drawing.scale - 1)
+		drawing.text = string.format("%s %d %d", drawing.text, math.ceil(x * multiplier), math.ceil(y * multiplier))
 	end
-	function ass_mt.append(ass, s)
-		ass.text = ass.text .. s
+	function Drawing.append(drawing, text)
+		drawing.text = drawing.text .. text
 	end
-	function ass_mt.merge(ass1, ass2)
-		ass1.text = ass1.text .. ass2.text
+	function Drawing.merge(drawing, other)
+		drawing.text = drawing.text .. other.text
 	end
-	function ass_mt.pos(ass, x, y)
-		ass:append(string.format("{\\pos(%f,%f)}", x, y))
+	function Drawing.pos(drawing, x, y)
+		drawing:append(string.format("{\\pos(%f,%f)}", x, y))
 	end
-	function ass_mt.an(ass, an)
-		ass:append(string.format("{\\an%d}", an))
+	function Drawing.an(drawing, alignment)
+		drawing:append(string.format("{\\an%d}", alignment))
 	end
-	function ass_mt.move_to(ass, x, y)
-		ass:append(" m")
-		ass:coord(x, y)
+	function Drawing.move_to(drawing, x, y)
+		drawing:append(" m")
+		drawing:coord(x, y)
 	end
-	function ass_mt.line_to(ass, x, y)
-		ass:append(" l")
-		ass:coord(x, y)
+	function Drawing.line_to(drawing, x, y)
+		drawing:append(" l")
+		drawing:coord(x, y)
 	end
-	function ass_mt.rect_cw(ass, x0, y0, x1, y1)
-		ass:move_to(x0, y0)
-		ass:line_to(x1, y0)
-		ass:line_to(x1, y1)
-		ass:line_to(x0, y1)
+	function Drawing.rect_cw(drawing, left, top, right, bottom)
+		drawing:move_to(left, top)
+		drawing:line_to(right, top)
+		drawing:line_to(right, bottom)
+		drawing:line_to(left, bottom)
 	end
 
 	return { ass_new = ass_new }
@@ -670,22 +699,23 @@ function World:make_os()
 	local world = self
 	local fake = {}
 	function fake.getenv(name)
-		return world.env[name]
+		return world.environment[name]
 	end
-	function fake.date(fmt, t)
-		fmt = fmt or "%c"
-		if fmt:sub(1, 1) ~= "!" then
-			fmt = "!" .. fmt
+	function fake.date(format, unix_time)
+		format = format or "%c"
+		-- A leading "!" means UTC, so the result doesn't depend on the time zone.
+		if format:sub(1, 1) ~= "!" then
+			format = "!" .. format
 		end
-		return os.date(fmt, t or FIXED_TIME)
+		return os.date(format, unix_time or FIXED_UNIX_TIME)
 	end
 	function fake.time()
-		return FIXED_TIME
+		return FIXED_UNIX_TIME
 	end
 	fake.clock = os.clock
 	function fake.remove(path)
-		local existed = world.fs[path] ~= nil
-		world.fs[path] = nil
+		local existed = world.files[path] ~= nil
+		world.files[path] = nil
 		world:log("os.remove: " .. path .. (existed and "" or " (missing)"))
 		if existed then
 			return true
@@ -693,15 +723,15 @@ function World:make_os()
 		return nil, path .. ": No such file or directory"
 	end
 	function fake.tmpname()
-		world.next_tmp = world.next_tmp + 1
-		return "/tmp/lua_tmp" .. world.next_tmp
+		world.temporary_file_count = world.temporary_file_count + 1
+		return "/tmp/lua_tmp" .. world.temporary_file_count
 	end
 	function fake.exit()
 		error("os.exit called")
 	end
-	function fake.execute(cmd)
-		world:log("os.execute: " .. tostring(cmd))
-		return 0
+	function fake.execute(command)
+		world:log("os.execute: " .. tostring(command))
+		return EXIT_SUCCESS
 	end
 	return fake
 end
@@ -710,74 +740,70 @@ function World:make_io()
 	local world = self
 	local fake = {}
 
-	local function reader(content, on_close)
-		local f = { pos = 1, content = content }
-		function f.read(file, fmt)
-			fmt = fmt or "*l"
-			if file.pos > #file.content then
+	local function reader(content)
+		local file = { position = 1, content = content }
+		function file.read(this_file, format)
+			format = format or "*l"
+			if this_file.position > #this_file.content then
 				return nil
 			end
-			if fmt == "*a" or fmt == "a" then
-				local rest = file.content:sub(file.pos)
-				file.pos = #file.content + 1
+			if format == "*a" or format == "a" then
+				local rest = this_file.content:sub(this_file.position)
+				this_file.position = #this_file.content + 1
 				return rest
 			end
-			local nl = file.content:find("\n", file.pos, true)
-			local line = file.content:sub(file.pos, (nl or #file.content + 1) - 1)
-			file.pos = (nl or #file.content) + 1
+			local newline = this_file.content:find("\n", this_file.position, true)
+			local line_end = newline or #this_file.content + 1
+			local line = this_file.content:sub(this_file.position, line_end - 1)
+			this_file.position = line_end + 1
 			return line
 		end
-		function f.lines(file)
+		function file.lines(this_file)
 			return function()
-				return file:read("*l")
+				return this_file:read("*l")
 			end
 		end
-		function f.close()
-			if on_close then
-				return on_close()
-			end
+		function file.close()
 			return true
 		end
-		return f
+		return file
 	end
 
 	function fake.open(path, mode)
 		mode = mode or "r"
-		if mode:sub(1, 1) == "r" then
-			local content = world.fs[path]
+		local access = mode:sub(1, 1)
+		if access == "r" then
+			local content = world.files[path]
 			if type(content) ~= "string" then
 				return nil, path .. ": No such file or directory"
 			end
 			return reader(content)
 		end
 		local buffer = {}
-		if mode:sub(1, 1) == "a" and type(world.fs[path]) == "string" then
-			buffer[1] = world.fs[path]
+		if access == "a" and type(world.files[path]) == "string" then
+			buffer[1] = world.files[path]
 		end
-		local f = {}
-		function f.write(file, ...)
-			for i = 1, select("#", ...) do
-				buffer[#buffer + 1] = tostring((select(i, ...)))
-			end
-			return file
+		local file = {}
+		function file.write(this_file, ...)
+			buffer[#buffer + 1] = join_arguments("", ...)
+			return this_file
 		end
-		function f.close()
+		function file.close()
 			local content = table.concat(buffer)
-			world.fs[path] = content
+			world.files[path] = content
 			world:log("io.write: " .. path .. " <- " .. json.encode(content))
 			return true
 		end
-		return f
+		return file
 	end
 
-	function fake.popen(cmd, mode)
-		world:log("io.popen: " .. cmd)
-		local content = table.concat(world:popen_output(cmd), "\n")
-		return reader(content)
+	function fake.popen(command)
+		world:log("io.popen: " .. command)
+		return reader(table.concat(world:encoder_output(), "\n"))
 	end
 
-	fake.lines = function(path)
-		return reader(world.fs[path] or ""):lines()
+	function fake.lines(path)
+		return reader(world.files[path] or ""):lines()
 	end
 
 	return fake
@@ -786,41 +812,43 @@ end
 -- pairs() in sorted key order. Real hash order differs between PUC Lua and
 -- LuaJIT (and between LuaJIT builds), and a few script outputs depend on it.
 -- Giving the sandbox a canonical order keeps the goldens runtime-independent.
+-- Numbers sort first, then strings, then booleans, then anything else.
 local KEY_TYPE_RANK = { number = 1, string = 2, boolean = 3 }
+local OTHER_KEY_RANK = 4
 
-local function key_less(a, b)
-	local ta, tb = type(a), type(b)
-	if ta ~= tb then
-		return (KEY_TYPE_RANK[ta] or 9) < (KEY_TYPE_RANK[tb] or 9)
+local function key_comes_first(first, second)
+	local first_type, second_type = type(first), type(second)
+	if first_type ~= second_type then
+		return (KEY_TYPE_RANK[first_type] or OTHER_KEY_RANK) < (KEY_TYPE_RANK[second_type] or OTHER_KEY_RANK)
 	end
-	if ta == "number" or ta == "string" then
-		return a < b
+	if first_type == "number" or first_type == "string" then
+		return first < second
 	end
-	return tostring(a) < tostring(b)
+	return tostring(first) < tostring(second)
 end
 
-local function sorted_pairs(t)
+local function sorted_pairs(target)
 	local keys = {}
-	for k in next, t do
-		keys[#keys + 1] = k
+	for key in next, target do
+		keys[#keys + 1] = key
 	end
-	table.sort(keys, key_less)
-	local i = 0
+	table.sort(keys, key_comes_first)
+	local index = 0
 	return function()
 		while true do
-			i = i + 1
-			local k = keys[i]
-			if k == nil then
+			index = index + 1
+			local key = keys[index]
+			if key == nil then
 				return nil
 			end
 			-- Skip keys removed during traversal, as next() would.
-			local v = rawget(t, k)
-			if v ~= nil then
-				return k, v
+			local value = rawget(target, key)
+			if value ~= nil then
+				return key, value
 			end
 		end
 	end,
-		t,
+		target,
 		nil
 end
 
@@ -831,9 +859,9 @@ function World:load_script(script_path)
 	local source = file:read("*a")
 	file:close()
 
-	local chunk, err = loadstring(source, "=webm.lua")
+	local chunk, compile_error = loadstring(source, "=webm.lua")
 	if not chunk then
-		error("cannot compile " .. script_path .. ": " .. err)
+		error("cannot compile " .. script_path .. ": " .. compile_error)
 	end
 
 	---@type table<string, any>
@@ -846,67 +874,64 @@ function World:load_script(script_path)
 	}
 	self.mp = modules.mp
 
-	local env = setmetatable({}, { __index = _G })
-	env._G = env
-	env.pairs = sorted_pairs
+	local environment = setmetatable({}, { __index = _G })
+	environment._G = environment
+	environment.pairs = sorted_pairs
 	-- Like the real require: already loaded modules first (the mp modules
 	-- start there), then the loaders the bundle put in package.preload.
-	env.require = function(name)
+	environment.require = function(name)
 		if modules[name] == nil then
-			local loader = env.package.preload[name]
+			local loader = environment.package.preload[name]
 			if not loader then
 				error("module '" .. name .. "' not found")
 			end
-			local result = loader(name)
-			modules[name] = result == nil and true or result
+			local loaded = loader(name)
+			modules[name] = loaded == nil and true or loaded
 		end
 		return modules[name]
 	end
-	env.package = {
+	-- package.config starts with the platform's directory separator.
+	environment.package = {
 		config = (self.platform == "windows" and "\\" or "/") .. "\n;\n?\n!\n-\n",
 		path = "",
 		cpath = "",
 		loaded = modules,
 		preload = {},
 	}
-	env.os = self:make_os()
-	env.io = self:make_io()
-	env.print = function(...)
-		local parts = {}
-		for i = 1, select("#", ...) do
-			parts[#parts + 1] = tostring((select(i, ...)))
-		end
-		self:log("print: " .. table.concat(parts, "\t"))
+	environment.os = self:make_os()
+	environment.io = self:make_io()
+	environment.print = function(...)
+		self:log("print: " .. join_arguments("\t", ...))
 	end
-	setfenv(chunk, env)
-	self.env_table = env
+	setfenv(chunk, environment)
 	self:protected(chunk)
 end
 
--- Run fn, turning script errors into a transcript line. Line numbers are
--- dropped so the goldens do not depend on the layout of the built file.
-function World:protected(fn, ...)
-	local args = { ... }
-	local n = select("#", ...)
-	local ok, err = xpcall(function()
-		return fn(unpack(args, 1, n))
-	end, function(e)
-		return tostring(e)
+-- Runs the function, turning script errors into a transcript line. Line
+-- numbers are dropped so the goldens do not depend on the layout of the
+-- built file.
+function World:protected(callback, ...)
+	local arguments = { ... }
+	local argument_count = select("#", ...)
+	local succeeded, message = xpcall(function()
+		return callback(unpack(arguments, 1, argument_count))
+	end, function(error_value)
+		return tostring(error_value)
 	end)
-	if not ok then
-		err = err:gsub("webm%.lua:%d+: ", "webm.lua: ")
+	if not succeeded then
+		message = message:gsub("webm%.lua:%d+: ", "webm.lua: ")
 		-- Errors are always recorded, even inside quiet steps.
-		self.lines[#self.lines + 1] = "SCRIPT ERROR: " .. err
+		self.lines[#self.lines + 1] = "SCRIPT ERROR: " .. message
 	end
-	return ok
+	return succeeded
 end
 
 -- Scenario actions ----------------------------------------------------------
 
 function World:press(key)
-	for _, b in pairs(self.forced_bindings) do
-		if b.key == key then
-			return self:protected(b.fn)
+	for _, binding in pairs(self.forced_bindings) do
+		if binding.key == key then
+			return self:protected(binding.callback)
 		end
 	end
 	if self.key_bindings[key] then
@@ -916,54 +941,54 @@ function World:press(key)
 end
 
 function World:script_message(name, ...)
-	local fn = self.script_messages[name]
-	if not fn then
+	local handler = self.script_messages[name]
+	if not handler then
 		self:log("script-message " .. name .. ": no handler")
 		return
 	end
-	return self:protected(fn, ...)
+	return self:protected(handler, ...)
 end
 
 function World:fire_event(name)
-	for _, fn in ipairs(self.events[name] or {}) do
-		self:protected(fn, { event = name })
+	for _, handler in ipairs(self.events[name] or {}) do
+		self:protected(handler, { event = name })
 	end
 end
 
-function World:run_async()
-	local pending = self.pending_async
-	self.pending_async = {}
-	for _, p in ipairs(pending) do
-		if p.aborted then
-			self:protected(p.cb, false, { status = -2, killed_by_us = true, error_string = "killed" }, "killed")
+function World:run_pending_commands()
+	local pending_commands = self.pending_commands
+	self.pending_commands = {}
+	for _, pending in ipairs(pending_commands) do
+		if pending.aborted then
+			local killed = { status = KILLED_STATUS, killed_by_us = true, error_string = "killed" }
+			self:protected(pending.callback, false, killed, "killed")
 		else
-			local success, result, err = self:async_result(p.t)
-			self:protected(p.cb, success, result, err)
+			local success, outcome, message = self:asynchronous_result(pending.command)
+			self:protected(pending.callback, success, outcome, message)
 		end
 	end
 end
 
 function World:fire_timers()
-	local timers = self.timers
-	for _, t in ipairs(timers) do
-		if t.active then
-			if not t.periodic then
-				t.active = false
+	for _, timer in ipairs(self.timers) do
+		if timer.active then
+			if not timer.periodic then
+				timer.active = false
 			end
-			self:protected(t.fn)
+			self:protected(timer.callback)
 		end
 	end
 end
 
 function World:active_bindings()
 	local keys = {}
-	for _, b in pairs(self.forced_bindings) do
-		keys[#keys + 1] = b.key
+	for _, binding in pairs(self.forced_bindings) do
+		keys[#keys + 1] = binding.key
 	end
 	table.sort(keys)
 	return keys
 end
 
-M.json = json
-M.property_to_string = property_to_string
-return M
+fake_mpv.json = json
+fake_mpv.property_to_string = property_to_string
+return fake_mpv

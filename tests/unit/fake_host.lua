@@ -1,9 +1,12 @@
 -- A webm.Host for unit tests: properties come from a plain table, files from
 -- a set of paths. Paths use "/" only.
 
-local M = {}
+local fake_host = {}
 
 local NOT_FOUND = "property not found"
+
+-- A fixed moment for host.date: 2024-03-09 13:45:30 UTC.
+local FIXED_UNIX_TIME = 1709991930
 
 local function to_string(value)
 	if type(value) == "boolean" then
@@ -12,53 +15,53 @@ local function to_string(value)
 	return tostring(value)
 end
 
----@param props? table<string, any>
----@param opts? {files?: table<string, boolean>, env?: table<string, string>}
+---@param properties? table<string, any>
+---@param settings? {files?: table<string, boolean>, environment?: table<string, string>}
 ---@return webm.Host
-function M.new(props, opts)
-	props = props or {}
-	opts = opts or {}
-	local files = opts.files or {}
-	local env = opts.env or { HOME = "/home/me" }
+function fake_host.new(properties, settings)
+	properties = properties or {}
+	settings = settings or {}
+	local files = settings.files or {}
+	local environment = settings.environment or { HOME = "/home/me" }
 
 	local host = {}
 
-	function host.get_property(name, def)
-		local value = props[name]
+	function host.get_property(name, default)
+		local value = properties[name]
 		if value == nil then
-			return def, NOT_FOUND
+			return default, NOT_FOUND
 		end
 		return to_string(value)
 	end
 
-	function host.get_property_osd(name, def)
-		local value = props[name]
+	function host.get_property_osd(name, default)
+		local value = properties[name]
 		if value == nil then
-			return def or "", NOT_FOUND
+			return default or "", NOT_FOUND
 		end
 		return to_string(value)
 	end
 
-	function host.get_property_native(name, def)
-		local value = props[name]
+	function host.get_property_native(name, default)
+		local value = properties[name]
 		if value == nil then
-			return def, NOT_FOUND
+			return default, NOT_FOUND
 		end
 		return value
 	end
 
-	function host.get_property_number(name, def)
-		local value = tonumber(props[name])
+	function host.get_property_number(name, default)
+		local value = tonumber(properties[name])
 		if value == nil then
-			return def, NOT_FOUND
+			return default, NOT_FOUND
 		end
 		return value
 	end
 
-	function host.get_property_bool(name, def)
-		local value = props[name]
+	function host.get_property_bool(name, default)
+		local value = properties[name]
 		if type(value) ~= "boolean" then
-			return def, NOT_FOUND
+			return default, NOT_FOUND
 		end
 		return value
 	end
@@ -67,35 +70,34 @@ function M.new(props, opts)
 		return files[path] ~= nil
 	end
 
-	function host.join_path(a, b)
-		if a == "" then
-			return b
+	function host.join_path(first, second)
+		if first == "" then
+			return second
 		end
-		if b:sub(1, 1) == "/" then
-			return b
+		if second:sub(1, 1) == "/" then
+			return second
 		end
-		return a:sub(-1) == "/" and a .. b or a .. "/" .. b
+		return first:sub(-1) == "/" and first .. second or first .. "/" .. second
 	end
 
 	function host.split_path(path)
-		local dir, name = path:match("^(.*/)([^/]*)$")
-		if not dir then
+		local directory, name = path:match("^(.*/)([^/]*)$")
+		if not directory then
 			return ".", path
 		end
-		return dir, name
+		return directory, name
 	end
 
 	function host.getenv(name)
-		return env[name]
+		return environment[name]
 	end
 
-	-- A fixed moment: 2024-03-09 13:45:30 UTC.
 	function host.date(format)
-		return os.date("!" .. format, 1709991930) --[[@as string]]
+		return os.date("!" .. format, FIXED_UNIX_TIME) --[[@as string]]
 	end
 
 	host.is_windows = false
 	return host
 end
 
-return M
+return fake_host

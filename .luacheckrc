@@ -23,7 +23,7 @@ files["tests/unit/**"] = {
 }
 
 files["tests/golden/**"] = {
-	globals = { "GOLDEN_DIR" },
+	globals = { "GOLDEN_DIRECTORY" },
 	-- The fake mpv API mirrors real signatures, so many arguments go unused.
 	unused_args = false,
 }

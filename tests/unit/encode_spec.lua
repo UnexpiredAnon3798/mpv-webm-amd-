@@ -8,8 +8,14 @@ local options_module = require("core.options")
 
 local formats = formats_module.by_id
 
-local function base_props(extra)
-	local p = {
+-- The selection every test encodes, in seconds.
+local START_TIME = 1
+local END_TIME = 3
+-- The region the script uses for "no crop".
+local WHOLE_FRAME = { x = -1, y = -1, w = -1, h = -1 }
+
+local function base_properties(overrides)
+	local properties = {
 		filename = "clip.mkv",
 		["filename/no-ext"] = "clip",
 		["media-title"] = "clip",
@@ -26,37 +32,41 @@ local function base_props(extra)
 		},
 		vf = {},
 	}
-	for k, v in pairs(extra or {}) do
-		p[k] = v
+	for name, value in pairs(overrides or {}) do
+		properties[name] = value
 	end
-	return p
+	return properties
 end
 
-local function build(opts)
-	opts = opts or {}
+local function build(settings)
+	settings = settings or {}
 	local options = options_module.defaults()
-	for k, v in pairs(opts.options or {}) do
-		options[k] = v
+	for name, value in pairs(settings.options or {}) do
+		options[name] = value
 	end
-	local host = fake_host.new(base_props(opts.props), { env = opts.env })
+	local host = fake_host.new(base_properties(settings.properties), { environment = settings.environment })
 	return command.build(host, options, {
 		format = formats[options.output_format],
-		region = opts.region,
-		path = opts.path or "/videos/clip.mkv",
-		is_stream = opts.is_stream or false,
-		start_time = 1,
-		end_time = 3,
-		original_start_time = 1,
-		original_end_time = 3,
+		region = settings.region,
+		path = settings.path or "/videos/clip.mkv",
+		is_stream = settings.is_stream or false,
+		start_time = START_TIME,
+		end_time = END_TIME,
+		original_start_time = START_TIME,
+		original_end_time = END_TIME,
 	})
 end
 
-local function index_of(list, value)
-	for i, v in ipairs(list) do
-		if v == value then
-			return i
+local function index_of(list, wanted)
+	for index, value in ipairs(list) do
+		if value == wanted then
+			return index
 		end
 	end
+end
+
+local function last(list)
+	return list[#list]
 end
 
 describe("encode.formats", function()
@@ -84,14 +94,16 @@ describe("encode.formats", function()
 
 	it("logs and falls back to bt.601 for an unknown raw colorspace", function()
 		local logged = {}
-		local ctx = {
+		local context = {
 			host = fake_host.new({ colormatrix = "weird" }),
 			options = options_module.defaults(),
 			log = function(level, text)
 				logged[#logged + 1] = level .. ": " .. text
 			end,
 		}
-		assert.are.equal("lavfi-scale=in_color_matrix=bt601", formats.raw:post_filters(ctx)[2])
+		local filters = formats.raw:post_filters(context)
+		local color_conversion_filter = filters[2]
+		assert.are.equal("lavfi-scale=in_color_matrix=bt601", color_conversion_filter)
 		assert.are.same({ "info: Warning, unknown colorspace weird detected, using bt.601." }, logged)
 	end)
 end)
@@ -99,54 +111,56 @@ end)
 describe("encode.command.build", function()
 	it("writes tracks as video, audio, then subtitles", function()
 		local plan = build({ options = { output_format = "avc", twopass = false } })
-		local vid, aid, sid =
-			index_of(plan.command, "--vid=1"), index_of(plan.command, "--aid=1"), index_of(plan.command, "--sid=1")
-		assert.is_true(vid < aid and aid < sid)
+		local video_position = index_of(plan.command, "--vid=1")
+		local audio_position = index_of(plan.command, "--aid=1")
+		local subtitle_position = index_of(plan.command, "--sid=1")
+		assert.is_true(video_position < audio_position and audio_position < subtitle_position)
 	end)
 
 	it("turns off tracks the format or the player isn't using", function()
 		local plan = build({
 			options = { output_format = "avc", twopass = false },
-			props = { mute = true, ["sub-visibility"] = false },
+			properties = { mute = true, ["sub-visibility"] = false },
 		})
-		local vid, aid, sid =
-			index_of(plan.command, "--vid=1"), index_of(plan.command, "--aid=no"), index_of(plan.command, "--sid=no")
-		assert.is_true(vid < aid and aid < sid)
+		local video_position = index_of(plan.command, "--vid=1")
+		local audio_position = index_of(plan.command, "--aid=no")
+		local subtitle_position = index_of(plan.command, "--sid=no")
+		assert.is_true(video_position < audio_position and audio_position < subtitle_position)
 	end)
 
 	it("crops to a valid region", function()
-		local plan = build({
-			options = { output_format = "avc", twopass = false },
-			region = { x = 10, y = 20, w = 300, h = 200 },
-		})
-		assert.is_truthy(index_of(plan.command, "--vf-add=lavfi-crop=300:200:10:20"))
-		local whole =
-			build({ options = { output_format = "avc", twopass = false }, region = { x = -1, y = -1, w = -1, h = -1 } })
-		for _, arg in ipairs(whole.command) do
-			assert.is_nil(arg:find("lavfi-crop", 1, true))
+		local crop = { x = 10, y = 20, w = 300, h = 200 }
+		local plan = build({ options = { output_format = "avc", twopass = false }, region = crop })
+		local expected_filter = string.format("--vf-add=lavfi-crop=%d:%d:%d:%d", crop.w, crop.h, crop.x, crop.y)
+		assert.is_truthy(index_of(plan.command, expected_filter))
+
+		local uncropped = build({ options = { output_format = "avc", twopass = false }, region = WHOLE_FRAME })
+		for _, argument in ipairs(uncropped.command) do
+			assert.is_nil(argument:find("lavfi-crop", 1, true))
 		end
 	end)
 
 	it("plans two passes with the right flags", function()
 		local plan = build({ options = { output_format = "webm-vp8" } })
-		assert.are.equal("--ovcopts-add=flags=+pass1", plan.first_pass[#plan.first_pass])
-		assert.are.equal("--ovcopts-add=flags=+pass2", plan.command[#plan.command])
+		assert.are.equal("--ovcopts-add=flags=+pass1", last(plan.first_pass))
+		assert.are.equal("--ovcopts-add=flags=+pass2", last(plan.command))
 		assert.is_true(plan.patch_vp8_log)
 	end)
 
 	it("skips two passes for streams, constant quality x264, and formats without it", function()
+		local constant_quality = 0
 		assert.is_nil(build({ options = { output_format = "avc" }, is_stream = true }).first_pass)
-		assert.is_nil(build({ options = { output_format = "avc", target_filesize = 0 } }).first_pass)
+		assert.is_nil(build({ options = { output_format = "avc", target_filesize = constant_quality } }).first_pass)
 		assert.is_nil(build({ options = { output_format = "avc-vaapi" } }).first_pass)
-		local av1 = build({ options = { output_format = "av1" } })
-		assert.is_truthy(av1.first_pass)
-		assert.is_false(av1.patch_vp8_log)
+		local av1_plan = build({ options = { output_format = "av1" } })
+		assert.is_truthy(av1_plan.first_pass)
+		assert.is_false(av1_plan.patch_vp8_log)
 	end)
 
 	it("writes next to the source by default and into output_directory when set", function()
 		local plan = build({ options = { output_format = "avc", twopass = false, output_template = "out" } })
 		assert.are.equal("/videos/out.mp4", plan.out_path)
-		assert.are.equal("--o=/videos/out.mp4", plan.command[#plan.command])
+		assert.are.equal("--o=/videos/out.mp4", last(plan.command))
 		local moved = build({
 			options = { output_format = "avc", twopass = false, output_template = "out", output_directory = "~/clips" },
 		})
@@ -156,16 +170,19 @@ describe("encode.command.build", function()
 	it("queues a warning when the home directory can't be found", function()
 		local plan = build({
 			options = { output_format = "avc", twopass = false, output_directory = "~/clips" },
-			env = {},
+			environment = {},
 		})
 		assert.are.same({ { level = "warn", text = "Couldn't find home dir." } }, plan.messages)
 	end)
 
 	it("drops crf for webp, after the format sets its own quality", function()
-		local plan = build({ options = { output_format = "webp", crf = 4 } })
-		assert.is_truthy(index_of(plan.command, "--ovcopts-add=qscale=90"))
-		for _, arg in ipairs(plan.command) do
-			assert.is_nil(arg:match("^%-%-ovcopts%-add=crf="))
+		local crf = 4
+		-- WebP maps crf to a 0 to 100 quality, 2.5 points per crf step.
+		local expected_quality = 100 - crf * 2.5
+		local plan = build({ options = { output_format = "webp", crf = crf } })
+		assert.is_truthy(index_of(plan.command, "--ovcopts-add=qscale=" .. expected_quality))
+		for _, argument in ipairs(plan.command) do
+			assert.is_nil(argument:match("^%-%-ovcopts%-add=crf="))
 		end
 	end)
 end)
