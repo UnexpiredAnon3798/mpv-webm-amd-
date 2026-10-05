@@ -55,6 +55,9 @@ local options = {
 	-- webp
 	-- avc (h264/AAC)
 	-- avc-nvenc (h264-NVENC/AAC)
+	-- avc-vaapi (h264-VAAPI/AAC, AMD/Intel GPU Linux)
+	-- hevc-vaapi (hevc-VAAPI/AAC, AMD/Intel GPU Linux)
+	-- avc-amf (h264-AMF/AAC, AMD GPU Windows)
 	-- webm-vp8 (libvpx/libvorbis)
 	-- gif
 	-- mp3 (libmp3lame)

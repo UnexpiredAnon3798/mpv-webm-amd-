@@ -13,3 +13,17 @@ class HEVC extends Format
 		}
 
 formats["hevc"] = HEVC!
+
+class HEVCVAAPI extends Format
+	new: =>
+		@displayName = "HEVC (VAAPI/AAC, AMD/Intel GPU Linux)"
+		@supportsTwopass = false
+		@videoCodec = "hevc_vaapi"
+		@audioCodec = "aac"
+		@outputExtension = "mp4"
+		@acceptsBitrate = true
+
+	getPostFilters: =>
+		{"format=nv12"}
+
+formats["hevc-vaapi"] = HEVCVAAPI!

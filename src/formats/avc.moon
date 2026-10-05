@@ -29,3 +29,28 @@ class AVCNVENC extends Format
 		}
 
 formats["avc-nvenc"] = AVCNVENC!
+
+class AVCVAAPI extends Format
+	new: =>
+		@displayName = "AVC (h264-VAAPI/AAC, AMD/Intel GPU Linux)"
+		@supportsTwopass = false
+		@videoCodec = "h264_vaapi"
+		@audioCodec = "aac"
+		@outputExtension = "mp4"
+		@acceptsBitrate = true
+
+	getPostFilters: =>
+		{"format=nv12"}
+
+formats["avc-vaapi"] = AVCVAAPI!
+
+class AVCAMF extends Format
+	new: =>
+		@displayName = "AVC (h264-AMF/AAC, AMD GPU Windows)"
+		@supportsTwopass = false
+		@videoCodec = "h264_amf"
+		@audioCodec = "aac"
+		@outputExtension = "mp4"
+		@acceptsBitrate = true
+
+formats["avc-amf"] = AVCAMF!
