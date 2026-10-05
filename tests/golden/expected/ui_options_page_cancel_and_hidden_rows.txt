@@ -1,0 +1,72 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"output_format":"nope","scale_height":333}
+event: webm-options-set
+> key W
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> key o
+osd_ass 1280x720: <clear>
+osd_message(0): 
+msg.warn: Tried to set invalid value nope to Output Format option.
+msg.warn: Tried to set invalid value 333 to Scale Height option.
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: AV1 ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: AV1 ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: AV1 ▶\N{\b1}Two Pass{\b0}: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: AV1 ▶\N{\b1}Two Pass{\b0}: ◀ no ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key ESC
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> options
+  additional_flags = "" (string)
+  apply_current_filters = true (boolean)
+  catbox_userhash = "" (string)
+  completion_command = "" (string)
+  crf = 10 (number)
+  display_progress = "auto" (string)
+  font_size = 28 (number)
+  force_square_pixels = false (boolean)
+  fps = -1 (number)
+  gif_dither = 2 (number)
+  keybind = "W" (string)
+  litterbox_time = "24h" (string)
+  margin = 10 (number)
+  message_duration = 5 (number)
+  non_strict_additional_flags = "" (string)
+  open_after_upload = false (boolean)
+  output_directory = "" (string)
+  output_format = "nope" (string)
+  output_template = "%F-[%s-%e]%M" (string)
+  run_detached = false (boolean)
+  scale_height = 333 (number)
+  strict_audio_bitrate = 64 (number)
+  strict_bitrate_multiplier = 0.950000 (number)
+  strict_filesize_constraint = false (boolean)
+  target_filesize = 2500 (number)
+  threads = 4 (number)
+  twopass = true (boolean)
+  upload_curl_path = "curl" (string)
+  upload_host = "catbox" (string)
+  write_filename_on_metadata = false (boolean)

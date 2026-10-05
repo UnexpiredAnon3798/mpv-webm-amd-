@@ -1,0 +1,65 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"display_progress":false,"output_format":"mp3","target_filesize":1000}
+event: webm-options-set
+> set range {"endTime":3,"startTime":0}
+event: webm-range-set
+> encode
+subprocess {"cancellable":false}:
+  | mpv
+  | --no-config
+  | --version
+event: webm-encode-started
+msg.info: Encoding to /videos/My Clip-[00.00.000-00.03.000]-audio.mp3
+osd_message(5): <ass>Started encode...
+subprocess {"cancellable":false}:
+  | mpv
+  | /videos/My Clip.mkv
+  | --start=0:00:00.000
+  | --end=0:00:03.000
+  | --loop-file=no
+  | --no-pause
+  | --oac=libmp3lame
+  | --aid=1
+  | --vid=no
+  | --sid=no
+  | --oacopts-add=b=2666.6666666667k
+  | --ovcopts-add=crf=10
+  | --o=/videos/My Clip-[00.00.000-00.03.000]-audio.mp3
+osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}/videos/My Clip-[00.00.000-00.03.000]-audio.mp3{\b0}
+event: webm-encode-finished success
+os.remove: /videos/My Clip-[00.00.000-00.03.000]-audio.mp3-video-pass1.log (missing)
+os.remove: x264_2pass.log (missing)
+os.remove: x264_2pass.log.mbtree (missing)
+> set options {"strict_filesize_constraint":true}
+event: webm-options-set
+> encode
+subprocess {"cancellable":false}:
+  | mpv
+  | --no-config
+  | --version
+event: webm-encode-started
+msg.info: Encoding to /videos/My Clip-[00.00.000-00.03.000]-audio.mp3
+osd_message(5): <ass>Started encode...
+subprocess {"cancellable":false}:
+  | mpv
+  | /videos/My Clip.mkv
+  | --start=0:00:00.000
+  | --end=0:00:03.000
+  | --loop-file=no
+  | --no-pause
+  | --oac=libmp3lame
+  | --aid=1
+  | --vid=no
+  | --sid=no
+  | --oacopts-add=b=2666.6666666667k
+  | --oacopts-add=minrate=2666.6666666667k
+  | --oacopts-add=maxrate=2666.6666666667k
+  | --o=/videos/My Clip-[00.00.000-00.03.000]-audio.mp3
+osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}/videos/My Clip-[00.00.000-00.03.000]-audio.mp3{\b0}
+event: webm-encode-finished success
+os.remove: /videos/My Clip-[00.00.000-00.03.000]-audio.mp3-video-pass1.log (missing)
+os.remove: x264_2pass.log (missing)
+os.remove: x264_2pass.log.mbtree (missing)

@@ -1,0 +1,63 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"display_progress":false,"output_format":"webp"}
+event: webm-options-set
+> set range {"endTime":4.250000,"startTime":1.500000}
+event: webm-range-set
+> encode
+subprocess {"cancellable":false}:
+  | mpv
+  | --no-config
+  | --version
+event: webm-encode-started
+msg.info: Encoding to /videos/My Clip-[00.01.500-00.04.250].webp
+osd_message(5): <ass>Started encode...
+subprocess {"cancellable":false}:
+  | mpv
+  | /videos/My Clip.mkv
+  | --start=0:00:01.500
+  | --end=0:00:04.250
+  | --loop-file=no
+  | --no-pause
+  | --ovc=libwebp
+  | --vid=1
+  | --sid=1
+  | --aid=no
+  | --video-rotate=0
+  | --deinterlace=no
+  | --sub-ass-override=scale
+  | --sub-ass-use-video-data=all
+  | --sub-auto=exact
+  | --sub-pos=100.000000
+  | --sub-scale=1.000000
+  | --sub-font=sans-serif
+  | --sub-font-size=38.000000
+  | --sub-bold=no
+  | --sub-italic=no
+  | --sub-color=#FFFFFFFF
+  | --sub-back-color=#00000000
+  | --sub-border-color=#FF000000
+  | --sub-border-size=3.000000
+  | --sub-shadow-color=#80000000
+  | --sub-shadow-offset=0.000000
+  | --sub-use-margins=yes
+  | --sub-margin-x=25
+  | --sub-margin-y=22
+  | --sub-align-x=center
+  | --sub-align-y=bottom
+  | --sub-spacing=0.000000
+  | --sub-justify=auto
+  | --sub-gauss=0.000000
+  | --sub-gray=no
+  | --ovcopts-add=threads=4
+  | --ovcopts-add=compression_level=6
+  | --ovcopts-add=qscale=75
+  | --ofopts-add=loop=0
+  | --o=/videos/My Clip-[00.01.500-00.04.250].webp
+osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}/videos/My Clip-[00.01.500-00.04.250].webp{\b0}
+event: webm-encode-finished success
+os.remove: /videos/My Clip-[00.01.500-00.04.250].webp-video-pass1.log (missing)
+os.remove: x264_2pass.log (missing)
+os.remove: x264_2pass.log.mbtree (missing)

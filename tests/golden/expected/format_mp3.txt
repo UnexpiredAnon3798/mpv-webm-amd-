@@ -1,0 +1,35 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"display_progress":false,"output_format":"mp3"}
+event: webm-options-set
+> set range {"endTime":4.250000,"startTime":1.500000}
+event: webm-range-set
+> encode
+subprocess {"cancellable":false}:
+  | mpv
+  | --no-config
+  | --version
+event: webm-encode-started
+msg.info: Encoding to /videos/My Clip-[00.01.500-00.04.250]-audio.mp3
+osd_message(5): <ass>Started encode...
+subprocess {"cancellable":false}:
+  | mpv
+  | /videos/My Clip.mkv
+  | --start=0:00:01.500
+  | --end=0:00:04.250
+  | --loop-file=no
+  | --no-pause
+  | --oac=libmp3lame
+  | --aid=1
+  | --vid=no
+  | --sid=no
+  | --oacopts-add=b=7272.7272727273k
+  | --ovcopts-add=crf=10
+  | --o=/videos/My Clip-[00.01.500-00.04.250]-audio.mp3
+osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}/videos/My Clip-[00.01.500-00.04.250]-audio.mp3{\b0}
+event: webm-encode-finished success
+os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.mp3-video-pass1.log (missing)
+os.remove: x264_2pass.log (missing)
+os.remove: x264_2pass.log.mbtree (missing)

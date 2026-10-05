@@ -1,0 +1,41 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set range {"endTime":4,"region":{"h":50,"w":100,"x":0,"y":10},"startTime":2}
+event: webm-range-set
+> key W
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is 00:02.000)\N{\b1}2:{\b0} set end time (current is 00:04.000)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> key p
+osd_ass 1280x720: <clear>
+osd_message(0): 
+set_property_native: vf = [{"name":"hflip"},{"name":"crop","params":{"h":"50","w":"100","x":"0","y":"10"}},{"name":"sub"}]
+set_property_native: ab-loop-a = 2
+set_property_native: ab-loop-b = 4
+set_property_native: time-pos = 2
+set_property_native: pause = false
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Press {\b1}ESC{\b0} to exit preview.\N
+> active forced bindings: ESC
+> key ESC
+osd_ass 1280x720: <clear>
+osd_message(0): 
+set_property: ab-loop-a = "no"
+set_property: ab-loop-b = "no"
+set_property_native: vf = [{"name":"hflip"}]
+set_property_native: time-pos = 1.500000
+set_property_native: pause = true
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is 00:02.000)\N{\b1}2:{\b0} set end time (current is 00:04.000)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page

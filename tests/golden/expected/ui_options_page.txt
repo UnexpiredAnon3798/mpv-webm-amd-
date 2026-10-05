@@ -1,0 +1,169 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> key W
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> key o
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ WebM ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> active forced bindings: DOWN ENTER ESC LEFT RIGHT UP
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ WebP ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+# gif selected, so GIF Dither Type is visible
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\N{\b1}Upload Destination{\b0}: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\N{\b1}Upload Destination{\b0}: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\N{\b1}Two Pass{\b0}: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\N{\b1}Two Pass{\b0}: ◀ no ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\N{\b1}Apply Current Video Filters{\b0}: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\N{\b1}Apply Current Video Filters{\b0}: ◀ no ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\N{\b1}Scale Height{\b0}: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\N{\b1}Scale Height{\b0}: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\N{\b1}Strict Filesize Constraint{\b0}: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\N{\b1}Write Filename on Metadata{\b0}: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\N{\b1}Write Filename on Metadata{\b0}: ◀ yes ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\N{\b1}Write Filename on Metadata{\b0}: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\N{\b1}Write Filename on Metadata{\b0}: ◀ yes ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 2250 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 2000 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 1750 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 1500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 1250 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 1000 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 750 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: ◀ 250 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: 0 (constant quality) ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: 0 (constant quality) ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\N{\b1}Target Filesize{\b0}: 0 (constant quality) ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\N{\b1}CRF{\b0}: ◀ 10 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\N{\b1}CRF{\b0}: ◀ 11 ▶\NFPS: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\NCRF: ◀ 11 ▶\N{\b1}FPS{\b0}: source ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\NCRF: ◀ 11 ▶\N{\b1}FPS{\b0}: ◀ 4 ▶\NGIF Dither Type: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\NCRF: ◀ 11 ▶\NFPS: ◀ 4 ▶\N{\b1}GIF Dither Type{\b0}: ◀ bayer_scale 2 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key RIGHT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\NCRF: ◀ 11 ▶\NFPS: ◀ 4 ▶\N{\b1}GIF Dither Type{\b0}: ◀ bayer_scale 3 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\NCRF: ◀ 11 ▶\NFPS: ◀ 4 ▶\NGIF Dither Type: ◀ bayer_scale 3 ▶\N{\b1}Force Square Pixels{\b0}: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key UP
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ GIF ▶\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ no ▶\NApply Current Video Filters: ◀ no ▶\NScale Height: ◀ 144 ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ yes ▶\NTarget Filesize: 0 (constant quality) ▶\NCRF: ◀ 11 ▶\NFPS: ◀ 4 ▶\N{\b1}GIF Dither Type{\b0}: ◀ bayer_scale 3 ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key ENTER
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> options
+  additional_flags = "" (string)
+  apply_current_filters = false (boolean)
+  catbox_userhash = "" (string)
+  completion_command = "" (string)
+  crf = 11 (number)
+  display_progress = "auto" (string)
+  font_size = 28 (number)
+  force_square_pixels = false (boolean)
+  fps = 4 (number)
+  gif_dither = 3 (number)
+  keybind = "W" (string)
+  litterbox_time = "24h" (string)
+  margin = 10 (number)
+  message_duration = 5 (number)
+  non_strict_additional_flags = "" (string)
+  open_after_upload = false (boolean)
+  output_directory = "" (string)
+  output_format = "gif" (string)
+  output_template = "%F-[%s-%e]%M" (string)
+  run_detached = false (boolean)
+  scale_height = 144 (number)
+  strict_audio_bitrate = 64 (number)
+  strict_bitrate_multiplier = 0.950000 (number)
+  strict_filesize_constraint = false (boolean)
+  target_filesize = 0 (number)
+  threads = 4 (number)
+  twopass = false (boolean)
+  upload_curl_path = "curl" (string)
+  upload_host = "catbox" (string)
+  write_filename_on_metadata = true (boolean)

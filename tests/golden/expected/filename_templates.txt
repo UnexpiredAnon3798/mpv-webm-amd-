@@ -1,0 +1,34 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"display_progress":false,"output_format":"avc","twopass":false}
+event: webm-options-set
+> set range {"endTime":3725.001500,"startTime":3723.456700}
+event: webm-range-set
+"%F-[%s-%e]%M" -> "/videos/My Clip-[1.02.03.456-1.02.05.001]-audio.mp4"
+"%f" -> "/videos/My Clip.mkv.mp4"
+"%T" -> "/videos/Title 100% Live.mp4"
+"%S_%E" -> "/videos/1.02.03_1.02.05.mp4"
+"%wH:%wM:%wS.%wT" -> "/videos/010203.457.mp4"
+"%wh %wm %ws %wf" -> "/videos/1 62 3723 3723.4567.mp4"
+"%mH-%mM-%mS-%mT %mh %mm %ms %mf" -> "/videos/01-02-05-001 1 62 3725 3725.0015.mp4"
+"%p_%P" -> "/videos/01.02.03_01.02.03.457.mp4"
+"%mp_%mP" -> "/videos/01.02.05_01.02.05.001.mp4"
+"%R" -> "/videos/-1080p.mp4"
+"%mb" -> "/videos/2.5.mp4"
+"100%t%" -> "/videos/100%.mp4"
+"%tY-%tm-%td %tH.%tM" -> "/videos/2024-03-09 13.45.mp4"
+"%x|%X{dir}" -> "/videos/videosvideos.mp4"
+"%{filename/no-ext}" -> "/videos/My Clip.mp4"
+"%{?pause:paused}%{!pause:playing}" -> "/videos/paused.mp4"
+"%{?pause==yes:Y}%{!pause==yes:N}" -> "/videos/Y.mp4"
+"%{missing:fallback}" -> "/videos/fallback.mp4"
+"%{missing:${filename/no-ext}}" -> "/videos/My Clip.mp4"
+"a<b>c:d\"e/f\\g|h?i*j" -> "/videos/abcdefghij.mp4"
+"clip_%04n" -> "/videos/clip_0003.mp4"
+"clip_%04n" -> "/videos/clip_0004.mp4"
+"seq %n" -> "/videos/seq 2.mp4"
+"seq %n-%02n" -> "/videos/seq 1-01.mp4"
+"literal %%n" -> "/videos/literal %n.mp4"
+"%{?missing:%n}none" -> "/videos/none.mp4"

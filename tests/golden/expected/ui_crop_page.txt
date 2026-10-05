@@ -1,0 +1,80 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> key W
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> key c
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 0 0 l 0 5760 l 0 5760 m 0 0 l 10240 0 l 10240 0 l 0 0 m 0 5760 l 10240 5760 l 10240 5760 l 0 5760 m 10240 0 l 10240 0 l 10240 5760 l 10240 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 0)\N{\b1}2:{\b0} change point B (1920, 1080)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (1920x1080)\N
+event: webm-show-crop-page
+> active forced bindings: 1 2 ENTER ESC r
+> mouse 100,50
+> key 1
+event: webm-crop-point-a 150 75
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 800 0 l 800 5760 l 0 5760 m 800 0 l 10240 0 l 10240 400 l 800 400 m 0 5760 l 10240 5760 l 10240 5760 l 0 5760 m 10240 400 l 10240 400 l 10240 5760 l 10240 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (150, 75)\N{\b1}2:{\b0} change point B (1920, 1080)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (1770x1005)\N
+> mouse 1279,719
+> key 2
+event: webm-crop-point-b 1920 1080
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 800 0 l 800 5760 l 0 5760 m 800 0 l 10240 0 l 10240 400 l 800 400 m 0 5760 l 10240 5760 l 10240 5760 l 0 5760 m 10240 400 l 10240 400 l 10240 5760 l 10240 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (150, 75)\N{\b1}2:{\b0} change point B (1920, 1080)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (1770x1005)\N
+> mouse 2000,-5
+> key 2
+event: webm-crop-point-b 1920 0
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 800 0 l 800 400 l 0 400 m 800 0 l 10240 0 l 10240 0 l 800 0 m 0 400 l 10240 400 l 10240 5760 l 0 5760 m 10240 0 l 10240 0 l 10240 5760 l 10240 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (150, 75)\N{\b1}2:{\b0} change point B (1920, 0)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (1770x75)\N
+> key r
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 0 0 l 0 5760 l 0 5760 m 0 0 l 10240 0 l 10240 0 l 0 0 m 0 5760 l 10240 5760 l 10240 5760 l 0 5760 m 10240 0 l 10240 0 l 10240 5760 l 10240 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 0)\N{\b1}2:{\b0} change point B (1920, 1080)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (1920x1080)\N
+> mouse 640,360
+> key 2
+event: webm-crop-point-b 960 540
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 0 0 l 0 2880 l 0 2880 m 0 0 l 10240 0 l 10240 0 l 0 0 m 0 2880 l 5120 2880 l 5120 5760 l 0 5760 m 5120 0 l 10240 0 l 10240 5760 l 5120 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 0)\N{\b1}2:{\b0} change point B (960, 540)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (960x540)\N
+> key ENTER
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> get state
+event: webm-state {"endTime":-1,"mainVisible":true,"mouse":{"x":640,"y":360},"osd":{"h":720,"w":1280},"region":{"h":540,"w":960,"x":0,"y":0},"startTime":-1}
+> key c
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 0 0 l 0 0 l 0 2880 l 0 2880 m 0 0 l 10240 0 l 10240 0 l 0 0 m 0 2880 l 5120 2880 l 5120 5760 l 0 5760 m 5120 0 l 10240 0 l 10240 5760 l 5120 5760{\p0}
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 0)\N{\b1}2:{\b0} change point B (960, 540)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (960x540)\N
+event: webm-show-crop-page
+> key ESC
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> get state
+event: webm-state {"endTime":-1,"mainVisible":true,"mouse":{"x":640,"y":360},"osd":{"h":720,"w":1280},"region":{"h":540,"w":960,"x":0,"y":0},"startTime":-1}

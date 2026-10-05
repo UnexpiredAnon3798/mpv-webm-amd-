@@ -1,0 +1,21 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"display_progress":false,"output_format":"avc","twopass":false}
+event: webm-options-set
+> set range {"endTime":2,"startTime":0}
+event: webm-range-set
+"%M%R" -> "/videos/-audio-1080p.mp4"
+> set options {"scale_height":720}
+event: webm-options-set
+"%M%R" -> "/videos/-audio-720p.mp4"
+> set property mute = true
+"%M" -> "/videos/.mp4"
+> set property mute = false
+> set property aid = false
+"%M" -> "/videos/.mp4"
+> set property aid = 1
+> set options {"output_format":"gif"}
+event: webm-options-set
+"%M" -> "/videos/.gif"

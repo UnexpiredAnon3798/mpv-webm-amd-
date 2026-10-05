@@ -1,0 +1,13 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set property path = null
+> set range {"endTime":2,"startTime":0}
+event: webm-range-set
+> encode
+subprocess {"cancellable":false}:
+  | mpv
+  | --no-config
+  | --version
+osd_message(5): <ass>No file is being played

@@ -1,0 +1,13 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> key W
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page

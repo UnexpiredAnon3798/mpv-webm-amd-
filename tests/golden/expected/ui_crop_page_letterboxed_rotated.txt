@@ -1,0 +1,44 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> key W
+osd_ass 1280x1024: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x1024:
+  | {\an7}{\pos(14.222222,14.222222)}{\fs39.822222222222}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> key c
+osd_ass 1280x1024: <clear>
+osd_message(0): 
+osd_ass 1280x1024: <clear>
+osd_message(0): 
+osd_ass 1280x1024:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 3416 0 l 3416 0 l 3416 8192 l 3416 8192 m 3416 0 l 6824 0 l 6824 0 l 3416 0 m 3416 8192 l 6824 8192 l 6824 8192 l 3416 8192 m 6824 0 l 6824 0 l 6824 8192 l 6824 8192{\p0}
+  | {\an7}{\pos(14.222222,14.222222)}{\fs39.822222222222}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 0)\N{\b1}2:{\b0} change point B (800, 1920)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (800x1920)\N
+event: webm-show-crop-page
+> mouse 300,10
+> key 1
+event: webm-crop-point-a 0 19
+osd_ass 1280x1024:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 3416 0 l 3416 0 l 3416 8192 l 3416 8192 m 3416 0 l 6824 0 l 6824 80 l 3416 80 m 3416 8192 l 6824 8192 l 6824 8192 l 3416 8192 m 6824 80 l 6824 80 l 6824 8192 l 6824 8192{\p0}
+  | {\an7}{\pos(14.222222,14.222222)}{\fs39.822222222222}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 19)\N{\b1}2:{\b0} change point B (800, 1920)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (800x1901)\N
+> mouse 900,1000
+> key 2
+event: webm-crop-point-b 800 1875
+osd_ass 1280x1024:
+  | {\an7}{\pos(0.000000,0.000000)}{\bord0}{\shad0}{\c&H000000&}{\alpha&H77}{\p4} m 3416 0 l 3416 0 l 3416 8000 l 3416 8000 m 3416 0 l 6824 0 l 6824 80 l 3416 80 m 3416 8000 l 6824 8000 l 6824 8192 l 3416 8192 m 6824 80 l 6824 80 l 6824 8192 l 6824 8192{\p0}
+  | {\an7}{\pos(14.222222,14.222222)}{\fs39.822222222222}{\b1}Crop:{\b0}\N{\b1}1:{\b0} change point A (0, 19)\N{\b1}2:{\b0} change point B (800, 1875)\N{\b1}r:{\b0} reset to whole screen\N{\b1}ESC:{\b0} cancel crop\N{\b1}ENTER:{\b0} confirm crop (800x1856)\N
+> key ENTER
+osd_ass 1280x1024: <clear>
+osd_message(0): 
+osd_ass 1280x1024: <clear>
+osd_message(0): 
+osd_ass 1280x1024:
+  | {\an7}{\pos(14.222222,14.222222)}{\fs39.822222222222}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> get state
+event: webm-state {"endTime":-1,"mainVisible":true,"mouse":{"x":900,"y":1000},"osd":{"h":1024,"w":1280},"region":{"h":1856,"w":800,"x":0,"y":19},"startTime":-1}

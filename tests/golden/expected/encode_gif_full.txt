@@ -1,0 +1,63 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> set options {"display_progress":false,"fps":15,"output_format":"gif","scale_height":240}
+event: webm-options-set
+> set range {"endTime":64.500000,"region":{"h":200,"w":300,"x":10,"y":20},"startTime":61.250000}
+event: webm-range-set
+> encode
+subprocess {"cancellable":false}:
+  | mpv
+  | --no-config
+  | --version
+event: webm-encode-started
+msg.info: Encoding to /videos/My Clip-[01.01.250-01.04.500].gif
+osd_message(5): <ass>Started encode...
+subprocess {"cancellable":false}:
+  | mpv
+  | /videos/My Clip.mkv
+  | --start=0:01:01.250
+  | --end=0:01:02.875
+  | --loop-file=no
+  | --no-pause
+  | --ovc=gif
+  | --vid=1
+  | --sid=1
+  | --aid=no
+  | --sub-ass-override=scale
+  | --sub-ass-use-video-data=all
+  | --sub-auto=exact
+  | --sub-pos=100.000000
+  | --sub-scale=1.000000
+  | --sub-font=sans-serif
+  | --sub-font-size=38.000000
+  | --sub-bold=no
+  | --sub-italic=no
+  | --sub-color=#FFFFFFFF
+  | --sub-back-color=#00000000
+  | --sub-border-color=#FF000000
+  | --sub-border-size=3.000000
+  | --sub-shadow-color=#80000000
+  | --sub-shadow-offset=0.000000
+  | --sub-use-margins=yes
+  | --sub-margin-x=25
+  | --sub-margin-y=22
+  | --sub-align-x=center
+  | --sub-align-y=bottom
+  | --sub-spacing=0.000000
+  | --sub-justify=auto
+  | --sub-gauss=0.000000
+  | --sub-gray=no
+  | --sub-speed=0.5
+  | --sub-delay=30.625
+  | --ovcopts-add=crf=10
+  | --o=/videos/My Clip-[01.01.250-01.04.500].gif
+  | --vf-add=lavfi=[[in]trim=start=0\\:01\\:01.250:end=0\\:01\\:04.500[vidtmp];[vidtmp]setpts=(PTS-61.25/TB)/2[vidtmp];[vidtmp]setpts=PTS+61.25/TB[vidtmp];[vidtmp]yadif=mode=1[vidtmp];[vidtmp]transpose=1[vidtmp];[vidtmp]crop=300:200:10:20[vidtmp];[vidtmp]scale=-2:240[vidtmp];[vidtmp]fps=15[vidtmp];[vidtmp]null[out]]
+  | --vf-add=sub
+  | --vf-add=lavfi=[[in]split[topal][vidf];[topal]palettegen[pal];[vidf][pal]paletteuse=diff_mode=rectangle:dither=bayer:bayer_scale=2[out]]
+osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}/videos/My Clip-[01.01.250-01.04.500].gif{\b0}
+event: webm-encode-finished success
+os.remove: /videos/My Clip-[01.01.250-01.04.500].gif-video-pass1.log (missing)
+os.remove: x264_2pass.log (missing)
+os.remove: x264_2pass.log.mbtree (missing)
