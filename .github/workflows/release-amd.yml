@@ -1,0 +1,27 @@
+name: release-amd
+on:
+  push:
+    tags: ["amd-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: sudo apt-get install -y lua5.1 luarocks make
+      - run: sudo luarocks install moonscript
+      - run: make
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: AMD formats ${{ github.ref_name }}
+          make_latest: false
+          body: |
+            The original MoonScript script with the AMD hardware encoding formats added: avc-vaapi, hevc-vaapi and avc-amf.
+
+            Put webm.lua in your mpv scripts folder and, if you want to change the defaults, webm.conf in script-opts.
+          files: |
+            build/webm.lua
+            build/webm.conf
