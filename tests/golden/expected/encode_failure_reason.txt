@@ -52,6 +52,7 @@ command_native_async #1 {"capture_stderr":true,"capture_stdout":true,"name":"sub
   | --sub-justify=auto
   | --sub-gauss=0.000000
   | --sub-gray=no
+  | --vf-add=format=nv12
   | --ovcopts-add=b=10000k
   | --ovcopts-add=crf=10
   | --o=/videos/My Clip-[00.00.000-00.02.000]-audio.mp4

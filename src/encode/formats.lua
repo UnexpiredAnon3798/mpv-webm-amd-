@@ -201,7 +201,8 @@ function avc_nvenc:flags(ctx)
 	return { "--ovcopts-add=bf=0" }
 end
 
--- VAAPI encoders reject most input pixel formats, so convert to nv12 first.
+-- VAAPI encoders reject most input pixel formats, and AMF's H.264 encoder
+-- rejects 10-bit video such as HDR and Dolby Vision, so convert to 8-bit nv12.
 local function nv12_post_filters()
 	return { "format=nv12" }
 end
@@ -218,7 +219,7 @@ local avc_vaapi = add(define({
 }))
 avc_vaapi.post_filters = nv12_post_filters
 
-add(define({
+local avc_amf = add(define({
 	id = "avc-amf",
 	display_name = "AVC (h264-AMF/AAC, AMD GPU Windows)",
 	supports_twopass = false,
@@ -228,6 +229,7 @@ add(define({
 	output_extension = "mp4",
 	accepts_bitrate = true,
 }))
+avc_amf.post_filters = nv12_post_filters
 
 local av1 = add(define({
 	id = "av1",

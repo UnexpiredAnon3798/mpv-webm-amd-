@@ -87,9 +87,10 @@ describe("encode.formats", function()
 		assert.are.same({ "--ovc=gif" }, formats.gif:codec_flags())
 	end)
 
-	it("converts to nv12 for the VAAPI encoders", function()
+	it("converts to 8-bit nv12 for the VAAPI and AMF encoders", function()
 		assert.are.same({ "format=nv12" }, formats["avc-vaapi"]:post_filters({}))
 		assert.are.same({ "format=nv12" }, formats["hevc-vaapi"]:post_filters({}))
+		assert.are.same({ "format=nv12" }, formats["avc-amf"]:post_filters({}))
 	end)
 
 	it("logs and falls back to bt.601 for an unknown raw colorspace", function()
