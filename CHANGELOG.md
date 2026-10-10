@@ -4,7 +4,7 @@ All notable changes to this fork of [ekisu/mpv-webm](https://github.com/ekisu/mp
 
 To release, rename `Unreleased` to the new version with the date, for example `## [1.0.0] - 2026-10-20`, then push the tag `v1.0.0`. The release workflow uses that section as the release notes.
 
-## [Unreleased]
+## [1.0.0] - 2026-10-10
 
 ### Added
 
