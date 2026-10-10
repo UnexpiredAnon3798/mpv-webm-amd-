@@ -7,7 +7,10 @@ max_line_length = false
 -- Methods often don't need self, such as the empty hooks on ui.page.
 self = false
 
+-- The CI installs Lua and LuaRocks into .lua and .luarocks inside the checkout.
 exclude_files = {
+	".lua/**",
+	".luarocks/**",
 	"build/**",
 	"types/**",
 	"tests/integration/**",

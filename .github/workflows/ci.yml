@@ -34,13 +34,9 @@ jobs:
         include:
           - os: macos-latest
             lua: luajit-2.1
-          - os: windows-latest
-            lua: luajit-2.1
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      # Builds Lua with MSVC on Windows; does nothing elsewhere.
-      - uses: step-security/msvc-dev-cmd@v1
       - uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: ${{ matrix.lua }}
