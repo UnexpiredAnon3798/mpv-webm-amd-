@@ -208,8 +208,8 @@ M.definitions = {
 		name = "display_progress",
 		default = "auto",
 		comment = {
-			"Display the encode progress, in %. Requires run_detached to be disabled.",
-			'On Windows, it shows a cmd popup. "auto" will display progress on non-Windows platforms.',
+			"Display the encode progress, in %, in the top left corner. The final pass",
+			'shows no progress when it runs detached. "auto" displays it on every platform.',
 		},
 	},
 	{

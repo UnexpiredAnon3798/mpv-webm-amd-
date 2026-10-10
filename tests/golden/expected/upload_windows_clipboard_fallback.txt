@@ -17,7 +17,7 @@ subprocess {"cancellable":false}:
 event: webm-encode-started
 msg.info: Encoding to C:\Videos\clip-[00.00.000-00.02.000]-audio.mp4
 osd_message(5): <ass>Started encode...
-subprocess {"cancellable":false}:
+command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | C:\Videos\clip.mkv
   | --start=0:00:00.000
@@ -62,7 +62,7 @@ subprocess {"cancellable":false}:
 osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}C:\Videos\clip-[00.00.000-00.02.000]-audio.mp4{\b0}
 event: webm-encode-finished success
 io.write: /tmp/lua_tmp2 <- ""
-command_native_async #1 {"capture_size":128,"capture_stderr":false,"capture_stdout":true,"name":"subprocess","playback_only":false}:
+command_native_async #2 {"capture_size":128,"capture_stderr":false,"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | curl
   | -#
   | -S
@@ -86,7 +86,7 @@ os.remove: x264_2pass.log (missing)
 os.remove: x264_2pass.log.mbtree (missing)
 > run async callbacks
 set_property: clipboard/text (rejected)
-command_native_async #2 {"name":"subprocess","playback_only":false,"stdin_data":"https://files.catbox.moe/abc123.mp4"}:
+command_native_async #3 {"name":"subprocess","playback_only":false,"stdin_data":"https://files.catbox.moe/abc123.mp4"}:
   | clip
 subprocess_detached:
   | cmd

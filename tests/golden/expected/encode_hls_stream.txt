@@ -15,7 +15,7 @@ command_native: ["dump_cache","0:00:30.000","0:00:40.000","/home/tester/cache_du
 event: webm-encode-started
 msg.info: Encoding to /home/tester/index-[00.30.000-00.35.000]-audio.webm
 osd_message(5): <ass>Started encode...
-subprocess {"cancellable":false}:
+command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /home/tester/cache_dump.ts
   | --start=0:00:00.000

@@ -152,6 +152,7 @@ function steps.filename(world, step)
 	world.quiet_depth = world.quiet_depth + 1
 	world:script_message("mpv-webm-set-options", json.encode({ output_template = step.template }))
 	world:script_message("mpv-webm-encode")
+	world:finish_encoders()
 	world.quiet_depth = world.quiet_depth - 1
 	world:log(json.encode(step.template) .. " -> " .. json.encode(world.last_output_path))
 end
@@ -165,6 +166,9 @@ local function run_scenario(scenario)
 			error("scenario " .. scenario.name .. ": unknown step " .. tostring(step[1]))
 		end
 		run_step(world, step)
+		-- Encodes run in the background in mpv. Here they finish right away,
+		-- unless the scenario holds them to look at the progress indicator.
+		world:finish_encoders()
 	end
 	return table.concat(world.lines, "\n") .. "\n"
 end

@@ -11,6 +11,7 @@ subprocess {"cancellable":false}:
   | mpv
   | --no-config
   | --version
+io.write: /videos/My Clip-[00.00.000-00.02.000]-audio.mp4.progress.lua <- "local path = mp.get_opt(\"webm-progress-file\")\nmp.add_periodic_timer(0.5, function()\n\tlocal position = mp.get_property_number(\"time-pos\")\n\tlocal file = position and io.open(path, \"w\")\n\tif file then\n\t\tfile:write(position)\n\t\tfile:close()\n\tend\nend)\n"
 event: webm-encode-started
 msg.info: Encoding to /videos/My Clip-[00.00.000-00.02.000]-audio.mp4
 osd_message(5): <ass>Started encode, process was detached.
@@ -56,3 +57,5 @@ subprocess_detached:
   | --ovcopts-add=b=10000k
   | --ovcopts-add=crf=10
   | --o=/videos/My Clip-[00.00.000-00.02.000]-audio.mp4
+os.remove: /videos/My Clip-[00.00.000-00.02.000]-audio.mp4.progress.lua
+os.remove: /videos/My Clip-[00.00.000-00.02.000]-audio.mp4.progress (missing)

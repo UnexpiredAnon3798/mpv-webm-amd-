@@ -100,17 +100,17 @@ local function world(settings)
 		curl_check = settings.curl_check,
 		first_pass_status = settings.first_pass_status,
 		encode_status = settings.encode_status,
-		encoder_output_lines = settings.encoder_output_lines,
 		upload = settings.upload,
 		clipboard_property = settings.clipboard_property,
 		file_size = settings.file_size,
 		osd_width = settings.osd_width,
 		osd_height = settings.osd_height,
+		hold_encoders = settings.hold_encoders,
 	}
 end
 
--- Synchronous, no progress page: the common setup for command goldens.
-local SYNCHRONOUS = { display_progress = false }
+-- No progress indicator: the common setup for command goldens.
+local NO_PROGRESS = { display_progress = false }
 
 local scenarios = {}
 local function add(scenario)
@@ -174,7 +174,7 @@ add({
 	name = "encode_vp8_bt709_colormatrix",
 	world = world({ properties = { ["video-params/colormatrix"] = "bt.709" } }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
@@ -200,7 +200,7 @@ for _, format_id in ipairs(format_ids) do
 		name = "format_" .. format_id,
 		world = world(),
 		steps = {
-			{ "options", values = merge(SYNCHRONOUS, { output_format = format_id }) },
+			{ "options", values = merge(NO_PROGRESS, { output_format = format_id }) },
 			{ "range", start_time = 1.5, end_time = 4.25 },
 			{ "encode" },
 		},
@@ -214,7 +214,7 @@ add({
 		{
 			"options",
 			values = merge(
-				SYNCHRONOUS,
+				NO_PROGRESS,
 				{ output_format = "avc", twopass = false, scale_height = 720, fps = 30, target_filesize = 5000 }
 			),
 		},
@@ -229,7 +229,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = true, target_filesize = 0, crf = 23 }),
+			values = merge(NO_PROGRESS, { output_format = "avc", twopass = true, target_filesize = 0, crf = 23 }),
 		},
 		{ "range", start_time = 1, end_time = 3 },
 		{ "encode" },
@@ -242,7 +242,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, {
+			values = merge(NO_PROGRESS, {
 				output_format = "avc",
 				twopass = false,
 				strict_filesize_constraint = true,
@@ -260,7 +260,7 @@ add({
 	name = "encode_mp3_bitrate",
 	world = world(),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "mp3", target_filesize = 1000 }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "mp3", target_filesize = 1000 }) },
 		{ "range", start_time = 0, end_time = 3 },
 		{ "encode" },
 		{ "options", values = { strict_filesize_constraint = true } },
@@ -272,7 +272,7 @@ add({
 	name = "encode_gif_full",
 	world = world({ properties = { speed = 2, ["video-rotate"] = 90, deinterlace = "yes" } }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "gif", scale_height = 240, fps = 15 }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "gif", scale_height = 240, fps = 15 }) },
 		{ "range", start_time = 61.25, end_time = 64.5, region = { x = 10, y = 20, w = 300, h = 200 } },
 		{ "encode" },
 	},
@@ -282,7 +282,7 @@ add({
 	name = "encode_gif_sierra_rotations",
 	world = world({ properties = { ["video-rotate"] = 270 } }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "gif", gif_dither = 6 }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "gif", gif_dither = 6 }) },
 		{ "range", start_time = 0, end_time = 1 },
 		{ "encode" },
 		{ "set", name = "video-rotate", value = 180 },
@@ -294,7 +294,7 @@ add({
 	name = "encode_webp_quality",
 	world = world(),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "webp", crf = 4 }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "webp", crf = 4 }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 		{ "options", values = { crf = 50 } },
@@ -306,7 +306,7 @@ add({
 	name = "encode_raw_colorspaces",
 	world = world(),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "raw" }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "raw" }) },
 		{ "range", start_time = 0, end_time = 1 },
 		{ "encode" },
 		{ "set", name = "colormatrix", value = "bt.2020" },
@@ -320,7 +320,7 @@ add({
 	name = "encode_speed_and_subtitle_timing",
 	world = world({ properties = { speed = 0.2, ["sub-speed"] = 1.5, ["sub-delay"] = 0.5 } }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 10, end_time = 12 },
 		{ "encode" },
 	},
@@ -348,7 +348,7 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 		{ "note", text = "same filters, apply_current_filters off" },
@@ -366,7 +366,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, {
+			values = merge(NO_PROGRESS, {
 				output_format = "avc",
 				twopass = false,
 				force_square_pixels = true,
@@ -408,7 +408,7 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
@@ -431,7 +431,7 @@ add({
 		},
 	}),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
@@ -441,7 +441,7 @@ add({
 	name = "encode_muted_without_subs",
 	world = world({ properties = { mute = true, ["sub-visibility"] = false } }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
@@ -504,7 +504,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, output_directory = "~/clips" }),
+			values = merge(NO_PROGRESS, { output_format = "avc", twopass = false, output_directory = "~/clips" }),
 		},
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
@@ -531,19 +531,42 @@ add({
 		},
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
-		{ "note", text = "display_progress=auto is off on Windows" },
+		{ "note", text = "display_progress=auto shows progress on Windows too" },
 		{ "options", values = { display_progress = "auto", output_directory = "~" } },
 		{ "encode" },
 	},
 })
 
+-- The encoder writes its position next to the output file, and the player
+-- shows it as a percentage on each timer tick. Encodes are held here so the
+-- scenario can look at the indicator before they finish.
+add({
+	name = "encode_progress_indicator",
+	world = world({ hold_encoders = true }),
+	steps = {
+		{ "range", start_time = 1.5, end_time = 4.25 },
+		{ "encode" },
+		{ "note", text = "halfway through the first pass" },
+		{ "file", path = "/videos/My Clip-[00.01.500-00.04.250]-audio.webm.progress", content = "2.875" },
+		{ "timers" },
+		{ "run_pending_commands" },
+		{ "note", text = "the final pass starts from 0% again" },
+		{ "file", path = "/videos/My Clip-[00.01.500-00.04.250]-audio.webm.progress", content = "4.25" },
+		{ "timers" },
+		{ "run_pending_commands" },
+	},
+})
+
 add({
 	name = "encode_progress_failure",
-	world = world({ encoder_output_lines = { "Encode time-pos: 1.000000", "Exiting... (Errors when loading file)" } }),
+	world = world({ hold_encoders = true, encode_status = 1 }),
 	steps = {
 		{ "options", values = { output_format = "avc", twopass = false, display_progress = true } },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
+		{ "file", path = "/videos/My Clip-[00.00.000-00.02.000]-audio.mp4.progress", content = "0.5" },
+		{ "timers" },
+		{ "run_pending_commands" },
 	},
 })
 
@@ -551,7 +574,7 @@ add({
 	name = "encode_failures",
 	world = world({ encode_status = 1 }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
@@ -561,7 +584,7 @@ add({
 	name = "encode_first_pass_fails",
 	world = world({ first_pass_status = 1 }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc" }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc" }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},
@@ -582,7 +605,7 @@ add({
 add({
 	name = "encode_invalid_output_format",
 	world = world({ conf_file = { output_format = "h264" } }),
-	steps = { { "options", values = SYNCHRONOUS }, { "range", start_time = 0, end_time = 2 }, { "encode" } },
+	steps = { { "options", values = NO_PROGRESS }, { "range", start_time = 0, end_time = 2 }, { "encode" } },
 })
 
 add({
@@ -602,7 +625,7 @@ add({
 	name = "filename_templates",
 	world = filename_world,
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 3723.4567, end_time = 3725.0015 },
 		{ "filename", template = "%F-[%s-%e]%M" },
 		{ "filename", template = "%f" },
@@ -637,7 +660,7 @@ add({
 	name = "filename_audio_and_scale_markers",
 	world = world(),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "filename", template = "%M%R" },
 		{ "options", values = { scale_height = 720 } },
@@ -669,7 +692,7 @@ add({
 		files = { ["/videos/50%Foo ${pause}.mkv"] = "source" },
 	}),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "filename", template = "%f" },
 		{ "filename", template = "%F" },
@@ -722,7 +745,7 @@ add({
 	name = "ui_encode_validation",
 	world = world(),
 	steps = {
-		{ "options", values = SYNCHRONOUS },
+		{ "options", values = NO_PROGRESS },
 		{ "range", start_time = -1, end_time = 2 },
 		{ "key", key = "W" },
 		{ "key", key = "e" },
@@ -865,7 +888,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, catbox_userhash = "abc123" }),
+			values = merge(NO_PROGRESS, { output_format = "avc", twopass = false, catbox_userhash = "abc123" }),
 		},
 		{ "range", start_time = 0, end_time = 2 },
 		{ "key", key = "W" },
@@ -896,7 +919,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, {
+			values = merge(NO_PROGRESS, {
 				output_format = "avc",
 				twopass = false,
 				upload_host = "litterbox",
@@ -921,7 +944,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, open_after_upload = true }),
+			values = merge(NO_PROGRESS, { output_format = "avc", twopass = false, open_after_upload = true }),
 		},
 		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
@@ -937,7 +960,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, open_after_upload = true }),
+			values = merge(NO_PROGRESS, { output_format = "avc", twopass = false, open_after_upload = true }),
 		},
 		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
@@ -963,7 +986,7 @@ add({
 	steps = {
 		{
 			"options",
-			values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false, open_after_upload = true }),
+			values = merge(NO_PROGRESS, { output_format = "avc", twopass = false, open_after_upload = true }),
 		},
 		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
@@ -981,7 +1004,7 @@ add({
 	name = "upload_encode_fails",
 	world = world({ encode_status = 1 }),
 	steps = {
-		{ "options", values = merge(SYNCHRONOUS, { output_format = "avc", twopass = false }) },
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "upload" },
 	},

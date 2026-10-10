@@ -5,12 +5,8 @@ local base64 = require("core.base64")
 local check = require("encode.check")
 local fake_host = require("fake_host")
 local progress = require("encode.progress")
-local shell = require("encode.shell")
 local source = require("encode.source")
 local vp8_log = require("encode.vp8_log")
-
-local IS_WINDOWS = true
-local IS_UNIX = false
 
 describe("core.base64", function()
 	it("encodes with padding", function()
@@ -125,47 +121,40 @@ describe("encode.vp8_log", function()
 end)
 
 describe("encode.progress", function()
-	it("tracks the furthest position and the exit reason", function()
-		local start_time, end_time = 10, 20
-		local tracker = progress.new(start_time, end_time)
-		assert.are.equal("0%", tracker:percent_text())
-		local halfway = start_time + (end_time - start_time) / 2
-		tracker:parse_line(string.format("Encode time-pos: %f", halfway))
-		local earlier = halfway - 3
-		tracker:parse_line(string.format("Encode time-pos: %f", earlier))
-		assert.are.equal("50%", tracker:percent_text())
-		assert.is_false(tracker.finished)
-		tracker:parse_line("Exiting... (End of file)")
-		assert.is_true(tracker:succeeded())
+	local START_TIME, END_TIME = 10, 20
+
+	it("turns the position the encoder wrote into a percentage", function()
+		local halfway = START_TIME + (END_TIME - START_TIME) / 2
+		assert.are.equal(50, progress.percent(tostring(halfway), START_TIME, END_TIME))
+		assert.are.equal(0, progress.percent(tostring(START_TIME), START_TIME, END_TIME))
+		assert.are.equal(100, progress.percent(tostring(END_TIME), START_TIME, END_TIME))
 	end)
 
-	it("fails on any other exit reason", function()
-		local tracker = progress.new(0, 1)
-		tracker:parse_line("Exiting... (Errors when loading file)")
-		assert.is_true(tracker.finished)
-		assert.is_false(tracker:succeeded())
+	it("stays between 0 and 100", function()
+		local before_start, after_end = START_TIME - 5, END_TIME + 5
+		assert.are.equal(0, progress.percent(tostring(before_start), START_TIME, END_TIME))
+		assert.are.equal(100, progress.percent(tostring(after_end), START_TIME, END_TIME))
 	end)
 
-	it("shows progress automatically except on Windows", function()
-		assert.is_true(progress.should_display({ display_progress = "auto" }, IS_UNIX))
-		assert.is_false(progress.should_display({ display_progress = "auto" }, IS_WINDOWS))
-		assert.is_false(progress.should_display({ display_progress = false }, IS_UNIX))
+	it("shows 0% before the encoder writes anything", function()
+		assert.are.equal(0, progress.percent(nil, START_TIME, END_TIME))
+		assert.are.equal(0, progress.percent("", START_TIME, END_TIME))
 	end)
-end)
 
-describe("encode.shell", function()
-	it("quotes arguments with special characters for sh", function()
-		assert.are.equal(
-			"mpv '/a b.mkv' 'it'\\''s' --no-pause 2>&1",
-			shell.popen_command({ "mpv", "/a b.mkv", "it's", "--no-pause" }, IS_UNIX)
+	it("passes the script and the position file to the encoder", function()
+		assert.are.same(
+			{ "--script=/out.mp4.progress.lua", "--script-opts-append=webm-progress-file=/out.mp4.progress" },
+			progress.encoder_arguments("/out.mp4.progress.lua", "/out.mp4.progress")
 		)
 	end)
 
-	it("quotes for cmd and wraps the whole line", function()
-		assert.are.equal(
-			'""C:\\a b.mkv" "say "\\""hi"\\"""" 2>&1',
-			shell.popen_command({ "C:\\a b.mkv", 'say "hi"' }, IS_WINDOWS)
-		)
+	it("gives the encoder a script that compiles", function()
+		assert.is_function(loadstring(progress.ENCODER_SCRIPT))
+	end)
+
+	it("shows progress automatically on every platform", function()
+		assert.is_true(progress.should_display({ display_progress = "auto" }))
+		assert.is_false(progress.should_display({ display_progress = false }))
 	end)
 end)
 

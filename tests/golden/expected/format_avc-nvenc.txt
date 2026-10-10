@@ -13,7 +13,7 @@ subprocess {"cancellable":false}:
   | --version
 event: webm-encode-started
 osd_message(5): <ass>Starting first pass...
-subprocess {"cancellable":false}:
+command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:01.500
@@ -58,7 +58,7 @@ subprocess {"cancellable":false}:
   | --ovcopts-add=flags=+pass1
 msg.info: Encoding to /videos/My Clip-[00.01.500-00.04.250]-audio.mp4
 osd_message(5): <ass>Started encode...
-subprocess {"cancellable":false}:
+command_native_async #2 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:01.500

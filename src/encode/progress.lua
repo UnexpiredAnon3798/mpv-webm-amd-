@@ -1,67 +1,51 @@
--- Encode progress, read from the child mpv's terminal output.
+-- Encode progress. The encoder mpv loads a small script that writes its
+-- position to a file every half second, and the player reads that file.
 
 local M = {}
 
--- Makes the child mpv print its position on every status update.
-M.STATUS_FLAG = "--term-status-msg=Encode time-pos: ${=time-pos}\\n"
+-- The script the encoder runs. It reads the file path from its script-opts.
+M.ENCODER_SCRIPT = [[
+local path = mp.get_opt("webm-progress-file")
+mp.add_periodic_timer(0.5, function()
+	local position = mp.get_property_number("time-pos")
+	local file = position and io.open(path, "w")
+	if file then
+		file:write(position)
+		file:close()
+	end
+end)
+]]
 
----Whether to show the progress page. "auto" means everywhere but Windows,
----where the popen used for progress opens a console window.
+---Whether to show progress. "auto" shows it everywhere.
 ---@param options webm.Options
----@param is_windows boolean
 ---@return any
-function M.should_display(options, is_windows)
+function M.should_display(options)
 	if options.display_progress == "auto" then
-		return not is_windows
+		return true
 	end
 	return options.display_progress
 end
 
----@class webm.ProgressTracker
----@field start_time number
----@field duration number
----@field current_time number
----@field finished boolean
----@field finished_reason? string
-local Tracker = {}
-Tracker.__index = Tracker
+---Arguments that make the encoder report its position.
+---@param script_path string where ENCODER_SCRIPT was written
+---@param position_path string the file the encoder writes to
+---@return string[]
+function M.encoder_arguments(script_path, position_path)
+	return { "--script=" .. script_path, "--script-opts-append=webm-progress-file=" .. position_path }
+end
 
+---How far the encode is, from 0 to 100.
+---@param position_text? string what the encoder wrote, the position in seconds
 ---@param start_time number encoder start time
 ---@param end_time number encoder end time
----@return webm.ProgressTracker
-function M.new(start_time, end_time)
-	return setmetatable({
-		start_time = start_time,
-		duration = end_time - start_time,
-		current_time = start_time,
-		finished = false,
-	}, Tracker)
-end
-
----Reads one line of the child's output.
----@param line string
-function Tracker:parse_line(line)
-	local match_time = string.match(line, "Encode time[-]pos: ([0-9.]+)")
-	local match_exit = string.match(line, "Exiting... [(]([%a ]+)[)]")
-	-- Sometimes we get timestamps older than before, so only move forward.
-	if match_time ~= nil and tonumber(match_time) > self.current_time then
-		self.current_time = tonumber(match_time) --[[@as number]]
+---@return integer
+function M.percent(position_text, start_time, end_time)
+	local position = tonumber(position_text or "")
+	if not position or end_time <= start_time then
+		return 0
 	end
-	if match_exit ~= nil then
-		self.finished = true
-		self.finished_reason = match_exit
-	end
-end
-
----@return string e.g. "45%"
-function Tracker:percent_text()
-	return string.format("%d%%", 100 * ((self.current_time - self.start_time) / self.duration))
-end
-
----The child only reports "End of file" when it encoded the whole range.
----@return boolean
-function Tracker:succeeded()
-	return self.finished_reason == "End of file"
+	local percent = math.floor(100 * (position - start_time) / (end_time - start_time))
+	return math.max(0, math.min(100, percent))
 end
 
 return M

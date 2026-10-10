@@ -251,24 +251,12 @@ function World:run_subprocess(arguments)
 	return result(EXIT_SUCCESS)
 end
 
--- Output of encodes run through io.popen for the progress page. The lines
--- mimic mpv's terminal output.
-function World:encoder_output()
-	if self.settings.encoder_output_lines then
-		return self.settings.encoder_output_lines
-	end
-	return {
-		"[encode] Opening output file",
-		"Encode time-pos: 2.000000",
-		"Encode time-pos: 1.000000",
-		"Encode time-pos: 3.500000",
-		"Exiting... (End of file)",
-	}
-end
-
--- Results of asynchronous subprocesses: uploads and clipboard tools.
+-- Results of asynchronous subprocesses: encodes, uploads and clipboard tools.
 function World:asynchronous_result(command)
 	local arguments = command.args or {}
+	if arguments[1] == "mpv" then
+		return true, self:run_subprocess(arguments), nil
+	end
 	if arguments[1] == (self.settings.curl_path or "curl") then
 		local output_flag_index = nil
 		for index, argument in ipairs(arguments) do
@@ -799,7 +787,7 @@ function World:make_io()
 
 	function fake.popen(command)
 		world:log("io.popen: " .. command)
-		return reader(table.concat(world:encoder_output(), "\n"))
+		return reader("")
 	end
 
 	function fake.lines(path)
@@ -966,6 +954,28 @@ function World:run_pending_commands()
 			local success, outcome, message = self:asynchronous_result(pending.command)
 			self:protected(pending.callback, success, outcome, message)
 		end
+	end
+end
+
+-- Lets every pending encoder command finish, including passes they start.
+-- Scenarios with hold_encoders keep them pending until run_pending_commands.
+function World:finish_encoders()
+	if self.settings.hold_encoders then
+		return
+	end
+	while true do
+		local encoder = nil
+		for index, pending in ipairs(self.pending_commands) do
+			if (pending.command.args or {})[1] == "mpv" then
+				encoder = table.remove(self.pending_commands, index)
+				break
+			end
+		end
+		if not encoder then
+			return
+		end
+		local success, outcome, message = self:asynchronous_result(encoder.command)
+		self:protected(encoder.callback, success, outcome, message)
 	end
 end
 

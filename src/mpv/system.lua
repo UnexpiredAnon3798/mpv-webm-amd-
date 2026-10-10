@@ -2,7 +2,6 @@
 -- the browser, and the curl check for uploads.
 
 local mp = require("mp")
-local msg = require("mp.msg")
 local utils = require("mp.utils")
 
 local host = require("mpv.host")
@@ -12,20 +11,6 @@ local M = {}
 
 M.is_windows = host.is_windows
 M.is_macos = host.file_exists("/Applications") and not M.is_windows
-
----Runs a process and waits for it. Returns true when it exited with status 0.
----@param params mp.utils.SubprocessArgs
----@return boolean
-function M.run(params)
-	local res = utils.subprocess(params)
-	msg.verbose("Command stdout: ")
-	msg.verbose(res.stdout)
-	if res.status ~= 0 then
-		msg.verbose("Command failed! Reason: ", res.error, " Killed by us? ", res.killed_by_us and "yes" or "no")
-		return false
-	end
-	return true
-end
 
 ---@param path string
 ---@return string?

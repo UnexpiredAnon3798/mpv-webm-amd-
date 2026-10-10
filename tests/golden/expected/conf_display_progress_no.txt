@@ -9,27 +9,59 @@ subprocess {"cancellable":false}:
   | mpv
   | --no-config
   | --version
+io.write: /videos/My Clip-[00.01.500-00.04.250]-audio.mp4.progress.lua <- "local path = mp.get_opt(\"webm-progress-file\")\nmp.add_periodic_timer(0.5, function()\n\tlocal position = mp.get_property_number(\"time-pos\")\n\tlocal file = position and io.open(path, \"w\")\n\tif file then\n\t\tfile:write(position)\n\t\tfile:close()\n\tend\nend)\n"
 event: webm-encode-started
 msg.info: Encoding to /videos/My Clip-[00.01.500-00.04.250]-audio.mp4
-osd_ass 1280x720: <clear>
-osd_message(0): 
-osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Encoding ({\b1}0%{\b0})\N
-io.popen: mpv '/videos/My Clip.mkv' '--start=0:00:01.500' '--end=0:00:04.250' --loop-file=no --no-pause --ovc=libx264 --oac=aac --vid=1 --aid=1 --sid=1 --video-rotate=0 --deinterlace=no --sub-ass-override=scale --sub-ass-use-video-data=all --sub-auto=exact '--sub-pos=100.000000' '--sub-scale=1.000000' --sub-font=sans-serif '--sub-font-size=38.000000' --sub-bold=no --sub-italic=no '--sub-color=#FFFFFFFF' '--sub-back-color=#00000000' '--sub-border-color=#FF000000' '--sub-border-size=3.000000' '--sub-shadow-color=#80000000' '--sub-shadow-offset=0.000000' --sub-use-margins=yes --sub-margin-x=25 --sub-margin-y=22 --sub-align-x=center --sub-align-y=bottom '--sub-spacing=0.000000' --sub-justify=auto '--sub-gauss=0.000000' --sub-gray=no --ovcopts-add=threads=4 --ovcopts-add=b=7272k --ovcopts-add=crf=10 '--o=/videos/My Clip-[00.01.500-00.04.250]-audio.mp4' '--term-status-msg=Encode time-pos: ${=time-pos}\n' 2>&1
-osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Encoding ({\b1}0%{\b0})\N
-osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Encoding ({\b1}18%{\b0})\N
-osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Encoding ({\b1}18%{\b0})\N
-osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Encoding ({\b1}72%{\b0})\N
-osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}Encoding ({\b1}72%{\b0})\N
-osd_ass 1280x720: <clear>
-osd_message(0): 
+os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.mp4.progress (missing)
+osd_message(1): Encoding 0%
+command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
+  | mpv
+  | /videos/My Clip.mkv
+  | --start=0:00:01.500
+  | --end=0:00:04.250
+  | --loop-file=no
+  | --no-pause
+  | --ovc=libx264
+  | --oac=aac
+  | --vid=1
+  | --aid=1
+  | --sid=1
+  | --video-rotate=0
+  | --deinterlace=no
+  | --sub-ass-override=scale
+  | --sub-ass-use-video-data=all
+  | --sub-auto=exact
+  | --sub-pos=100.000000
+  | --sub-scale=1.000000
+  | --sub-font=sans-serif
+  | --sub-font-size=38.000000
+  | --sub-bold=no
+  | --sub-italic=no
+  | --sub-color=#FFFFFFFF
+  | --sub-back-color=#00000000
+  | --sub-border-color=#FF000000
+  | --sub-border-size=3.000000
+  | --sub-shadow-color=#80000000
+  | --sub-shadow-offset=0.000000
+  | --sub-use-margins=yes
+  | --sub-margin-x=25
+  | --sub-margin-y=22
+  | --sub-align-x=center
+  | --sub-align-y=bottom
+  | --sub-spacing=0.000000
+  | --sub-justify=auto
+  | --sub-gauss=0.000000
+  | --sub-gray=no
+  | --ovcopts-add=threads=4
+  | --ovcopts-add=b=7272k
+  | --ovcopts-add=crf=10
+  | --o=/videos/My Clip-[00.01.500-00.04.250]-audio.mp4
+  | --script=/videos/My Clip-[00.01.500-00.04.250]-audio.mp4.progress.lua
+  | --script-opts-append=webm-progress-file=/videos/My Clip-[00.01.500-00.04.250]-audio.mp4.progress
 osd_message(5): <ass>Encoded successfully! Saved to\N{\b1}/videos/My Clip-[00.01.500-00.04.250]-audio.mp4{\b0}
 event: webm-encode-finished success
 os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.mp4-video-pass1.log (missing)
 os.remove: x264_2pass.log (missing)
 os.remove: x264_2pass.log.mbtree (missing)
+os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.mp4.progress.lua
+os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.mp4.progress (missing)

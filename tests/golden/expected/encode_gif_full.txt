@@ -14,7 +14,7 @@ subprocess {"cancellable":false}:
 event: webm-encode-started
 msg.info: Encoding to /videos/My Clip-[01.01.250-01.04.500].gif
 osd_message(5): <ass>Started encode...
-subprocess {"cancellable":false}:
+command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:01:01.250

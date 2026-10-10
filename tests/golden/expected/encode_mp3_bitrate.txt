@@ -14,7 +14,7 @@ subprocess {"cancellable":false}:
 event: webm-encode-started
 msg.info: Encoding to /videos/My Clip-[00.00.000-00.03.000]-audio.mp3
 osd_message(5): <ass>Started encode...
-subprocess {"cancellable":false}:
+command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:00.000
@@ -43,7 +43,7 @@ subprocess {"cancellable":false}:
 event: webm-encode-started
 msg.info: Encoding to /videos/My Clip-[00.00.000-00.03.000]-audio.mp3
 osd_message(5): <ass>Started encode...
-subprocess {"cancellable":false}:
+command_native_async #2 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:00.000
