@@ -53,4 +53,9 @@ class AVCAMF extends Format
 		@outputExtension = "mp4"
 		@acceptsBitrate = true
 
+	-- AMF's H.264 encoder rejects 10-bit input, such as HDR and Dolby Vision
+	-- sources, so convert to 8-bit first.
+	getPostFilters: =>
+		{"format=nv12"}
+
 formats["avc-amf"] = AVCAMF!
