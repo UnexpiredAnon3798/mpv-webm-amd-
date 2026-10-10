@@ -246,7 +246,7 @@ function World:run_subprocess(arguments)
 		if status == EXIT_SUCCESS and output_path then
 			self.files[output_path] = "encoded"
 		end
-		return result(status)
+		return result(status, settings.encode_output)
 	end
 	return result(EXIT_SUCCESS)
 end

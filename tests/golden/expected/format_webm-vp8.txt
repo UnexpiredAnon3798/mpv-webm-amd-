@@ -13,7 +13,7 @@ subprocess {"cancellable":false}:
   | --version
 event: webm-encode-started
 osd_message(5): <ass>Starting first pass...
-command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
+command_native_async #1 {"capture_stderr":true,"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:01.500
@@ -63,7 +63,7 @@ command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_onl
 io.write: /videos/My Clip-[00.01.500-00.04.250]-audio.webm-video-pass1.log <- "JUpvlLneAyhNcpe84QYrUHWav+QJLlN4ncLnDDFWe6DF6g80WX6jyO0SN1yBpsvwFTpfhKnO8xg9Yoes0fYbQGWKr9T5HkNojbLX/CFGa5C12v8kSW6TuN0CJ0xxlrvgBSpPdJm+4wgtUnecweYLMFV6n8TpDjNYfaLH7BE2W4AAAAAA3jlqQc3yFzxhhqvQ9Ro/ZImu0/gdQmeMsdb7IEVqj7TZ/iNIbZK33AEmS3CVut8EKU5zmL3iByxRdpvA5QovVHmew+gNMld8ocbrEDVaf6TJ7hM4XYKnzPEWO2CFqs/0GT5jiK3S9xxBZouw1fofRGmOs9j9IkdskbbbACVKb5S53gMoTXKXvOEGK1AAAAAA3jlqQZ3C5wwxVnugxeoPNFl+o8jtEjdcgabL8BU6X4SpzvMYPWKHrNH2G0Bliq/U+R5DaI2y1/whRmuQtdr/JEluk7jdAidMcZa74AUqT3SZvuMILVJ3nMHmCzBVep/E6Q4zWH2ix+wRNluApcrvFDleg6jN8hc8YYar0PUaP2SJrtP4HUJnjLHW+yAAAAAA3jl6QW2St9wBJktw"
 msg.info: Encoding to /videos/My Clip-[00.01.500-00.04.250]-audio.webm
 osd_message(5): <ass>Started encode...
-command_native_async #2 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
+command_native_async #2 {"capture_stderr":true,"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:01.500

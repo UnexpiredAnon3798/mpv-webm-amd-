@@ -23,6 +23,8 @@ local M = {}
 -- How often the progress indicator updates, and how long each update stays.
 local PROGRESS_INTERVAL_SECONDS = 0.5
 local PROGRESS_MESSAGE_SECONDS = 1
+-- Long enough to read an error message.
+local FAILURE_MESSAGE_SECONDS = 10
 
 local function check_encoder()
 	local result = utils.subprocess({ args = check.ENCODER_ARGS, cancellable = false })
@@ -61,13 +63,14 @@ local function write_file(path, text)
 	return true
 end
 
----Runs one encoder pass in the background and calls on_finished(succeeded).
+---Runs one encoder pass in the background and calls on_finished(succeeded, details),
+---where details are the encoder's messages that explain a failure.
 ---With a progress file, shows "<label> 45%" until the pass ends.
 ---@param arguments string[]
 ---@param label string
 ---@param times webm.EncodeTimes
 ---@param progress_paths? {script: string, position: string}
----@param on_finished fun(succeeded: boolean)
+---@param on_finished fun(succeeded: boolean, details: string[])
 local function run_pass(arguments, label, times, progress_paths, on_finished)
 	local timer = nil
 	if progress_paths then
@@ -97,16 +100,34 @@ local function run_pass(arguments, label, times, progress_paths, on_finished)
 		args = arguments,
 		playback_only = false,
 		capture_stdout = true,
+		capture_stderr = true,
 	}, function(success, result)
 		if timer then
 			timer:kill()
 		end
 		local succeeded = success and result ~= nil and result.status == 0
+		local details = {}
 		if not succeeded then
-			msg.verbose("Command failed! Reason: ", result and result.error_string or "")
+			-- The encoder's own messages, so a failure explains itself in the
+			-- console (the ` key) instead of disappearing.
+			details = check.failure_details(result)
+			for _, line in ipairs(details) do
+				msg.error(label .. " failed: " .. line)
+			end
 		end
-		on_finished(succeeded)
+		on_finished(succeeded, details)
 	end)
+end
+
+-- The failure message on screen, with the cause when the encoder gave one.
+local function show_failure(title, details)
+	local cause = details[1]
+	if cause then
+		-- Plain text, since the encoder's message may contain ASS characters.
+		mp.osd_message(title .. "\n" .. cause .. "\nPress ` to see the encoder's messages.", FAILURE_MESSAGE_SECONDS)
+	else
+		osd.message(title .. " Check the logs for details.")
+	end
 end
 
 ---Encodes the range. on_done(success, out_path) is called when it finishes;
@@ -177,7 +198,7 @@ function M.encode(region, start_time, end_time, on_done)
 		end
 	end
 
-	local function finish(succeeded)
+	local function finish(succeeded, details)
 		if succeeded then
 			osd.message("Encoded successfully! Saved to\\N" .. osd.bold(out_path))
 			events.emit("encode-finished", "success")
@@ -188,7 +209,7 @@ function M.encode(region, start_time, end_time, on_done)
 				on_done(true, out_path)
 			end
 		else
-			osd.message("Encode failed! Check the logs for details.")
+			show_failure("Encode failed!", details)
 			events.emit("encode-finished", "fail")
 			fail()
 		end
@@ -218,9 +239,9 @@ function M.encode(region, start_time, end_time, on_done)
 
 	-- The first pass ignores run_detached. I don't think two passes work on streams.
 	osd.message("Starting first pass...")
-	run_pass(plan.first_pass, "First pass", times, progress_paths, function(succeeded)
+	run_pass(plan.first_pass, "First pass", times, progress_paths, function(succeeded, details)
 		if not succeeded then
-			osd.message("First pass failed! Check the logs for details.")
+			show_failure("First pass failed!", details)
 			events.emit("encode-finished", "fail")
 			fail()
 			remove_progress_files()

@@ -14,7 +14,7 @@ event: webm-encode-started
 osd_message(5): <ass>Starting first pass...
 os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.webm.progress (missing)
 osd_message(1): First pass 0%
-command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
+command_native_async #1 {"capture_stderr":true,"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:01.500
@@ -67,7 +67,7 @@ io.write: /videos/My Clip-[00.01.500-00.04.250]-audio.webm-video-pass1.log <- "J
 msg.info: Encoding to /videos/My Clip-[00.01.500-00.04.250]-audio.webm
 os.remove: /videos/My Clip-[00.01.500-00.04.250]-audio.webm.progress (missing)
 osd_message(1): Encoding 0%
-command_native_async #2 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
+command_native_async #2 {"capture_stderr":true,"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | /videos/My Clip.mkv
   | --start=0:00:01.500

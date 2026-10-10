@@ -175,6 +175,39 @@ describe("encode.check.encoder_problem", function()
 	end)
 end)
 
+describe("encode.check.failure_details", function()
+	-- What mpv printed when h264_amf was given a 10-bit source.
+	local AMF_TEN_BIT_OUTPUT = table.concat({
+		"[vo/lavc] Opening encoder: AMD AMF H.264 Encoder [h264_amf]",
+		"[ffmpeg] h264_amf: 10-bit input video is not supported by AMF H264 encoder",
+		"[vo/lavc] Could not initialize encoder.",
+		"Could not initialize video chain.",
+		"Video: no video",
+		"[encode] no data written to target file",
+		"Exiting... (Interrupted by error)",
+	}, "\r\n")
+
+	it("puts the first error first, since the others follow from it", function()
+		assert.are.same({
+			"[ffmpeg] h264_amf: 10-bit input video is not supported by AMF H264 encoder",
+			"[vo/lavc] Could not initialize encoder.",
+			"Could not initialize video chain.",
+		}, check.failure_details({ stdout = AMF_TEN_BIT_OUTPUT, stderr = "" }))
+	end)
+
+	it("falls back to the last lines when nothing looks like an error", function()
+		local output = "first\nsecond\nthird"
+		assert.are.same({ "first", "second", "third" }, check.failure_details({ stdout = output }))
+	end)
+
+	it("uses the process error when there is no output at all", function()
+		assert.are.same(
+			{ "the encoder process ended with: killed" },
+			check.failure_details({ stdout = "", error_string = "killed" })
+		)
+	end)
+end)
+
 describe("encode.source.resolve", function()
 	it("returns nil when nothing is playing", function()
 		assert.is_nil(source.resolve(fake_host.new({}), 1, 2))

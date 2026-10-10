@@ -100,6 +100,7 @@ local function world(settings)
 		curl_check = settings.curl_check,
 		first_pass_status = settings.first_pass_status,
 		encode_status = settings.encode_status,
+		encode_output = settings.encode_output,
 		upload = settings.upload,
 		clipboard_property = settings.clipboard_property,
 		file_size = settings.file_size,
@@ -575,6 +576,29 @@ add({
 	world = world({ encode_status = 1 }),
 	steps = {
 		{ "options", values = merge(NO_PROGRESS, { output_format = "avc", twopass = false }) },
+		{ "range", start_time = 0, end_time = 2 },
+		{ "encode" },
+	},
+})
+
+-- A failed encode shows the encoder's first error on screen and writes its
+-- error lines to the console. This is what mpv printed when h264_amf was
+-- given a 10-bit source, before avc-amf converted to nv12.
+add({
+	name = "encode_failure_reason",
+	world = world({
+		encode_status = 2,
+		encode_output = table.concat({
+			"[vo/lavc] Opening encoder: AMD AMF H.264 Encoder [h264_amf]",
+			"[ffmpeg] h264_amf: 10-bit input video is not supported by AMF H264 encoder",
+			"[vo/lavc] Could not initialize encoder.",
+			"Could not initialize video chain.",
+			"[encode] no data written to target file",
+			"Exiting... (Interrupted by error)",
+		}, "\n"),
+	}),
+	steps = {
+		{ "options", values = merge(NO_PROGRESS, { output_format = "avc-amf" }) },
 		{ "range", start_time = 0, end_time = 2 },
 		{ "encode" },
 	},

@@ -14,7 +14,7 @@ subprocess {"cancellable":false}:
 event: webm-encode-started
 msg.info: Encoding to /home/tester/Some Video-net.mp4
 osd_message(5): <ass>Started encode...
-command_native_async #1 {"capture_stdout":true,"name":"subprocess","playback_only":false}:
+command_native_async #1 {"capture_stderr":true,"capture_stdout":true,"name":"subprocess","playback_only":false}:
   | mpv
   | https://example.com/video.mp4
   | --start=0:00:03.000
