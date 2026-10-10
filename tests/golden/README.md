@@ -20,8 +20,8 @@ and subprocess results, then drives the script only through its external
 surface: key presses, script-messages, events, timers and asynchronous callbacks.
 Steps name their values, for example `{ "range", start_time = 1.5, end_time = 4.25 }`.
 
-Everything observable is written to a transcript: subprocess argv, popen
-command lines, OSD text, emitted `webm-*` events, properties set, options read,
+Everything observable is written to a transcript: subprocess arguments,
+background commands, OSD text, emitted `webm-*` events, properties set, options read,
 and files written or removed. The transcript is compared with
 `expected/<scenario>.txt`. The built `webm.conf` is compared with
 `expected/webm.conf.txt`.
@@ -37,8 +37,11 @@ implementation that behaves the same.
   preview page restores properties, and the order of filename substitutions.
 - Property observers fire synchronously and only when a scenario changes a
   property. mpv's initial observer notification is not emulated.
-- Asynchronous commands and timers run only when a scenario asks
-  (`run_pending_commands`, `timers`).
+- Background encodes finish right after the step that starts them, unless the
+  scenario sets `hold_encoders`. Other asynchronous commands and timers run
+  only when a scenario asks (`run_pending_commands`, `timers`).
+- The hardware the Device row reads is made up: see `DEFAULT_LSPCI` and
+  `DEFAULT_REGISTRY` in `fake_mpv.lua`.
 - `msg.verbose`/`debug` output is not recorded; the commands it prints are
   already captured from the subprocess calls.
 

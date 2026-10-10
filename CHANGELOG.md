@@ -10,6 +10,10 @@ To release, rename `Unreleased` to the new version with the date, for example `#
 
 - AMD hardware encoding formats: `avc-vaapi` (h264_vaapi) and `hevc-vaapi` (hevc_vaapi) for AMD and Intel GPUs on Linux, and `avc-amf` (h264_amf) for AMD GPUs on Windows. Two-pass encoding is off for all three. The VAAPI formats are experimental, see the README.
 - Releases: pushing a `v*` tag builds `webm.lua` and `webm.conf` and attaches them to a GitHub release.
+- A Device row on the options page shows which CPU or GPU the selected format encodes on. For NVENC and AMF it is the GPU of that vendor with the most memory, for VAAPI the GPU behind Linux's default render device.
+- A `hwdec` option. With the default `auto`, formats that encode on a GPU also decode on it (`--hwdec=auto-copy`), which takes most of the work off the CPU. Formats that encode on the CPU keep mpv's own setting. Any other value is used for every format.
+- When an encode fails, the on-screen message shows the encoder's first error, and its error lines go to the console (the ` key). Before, the encoder's messages were never shown.
+- A progress indicator: "Encoding 45%" (or "First pass 45%") in the top left corner while encoding, on every platform. The encoder writes its position to a small file next to the output, which is removed afterwards.
 
 ### Changed
 
@@ -18,6 +22,9 @@ To release, rename `Unreleased` to the new version with the date, for example `#
 - Leaving the preview restores the video filters, then the playback position, then the pause state. Before, the order depended on the Lua runtime.
 - Downloads moved from the rolling `latest` build to tagged releases.
 - Building needs only Lua 5.1 or LuaJIT (`make`, or `luajit tools/build.lua`). MoonScript is no longer used.
+- Encodes run in the background, so the player stays usable while encoding.
+- `avc-amf` converts the video to 8-bit before encoding, since AMF's H.264 encoder rejects 10-bit sources such as HDR and Dolby Vision streams.
+- `display_progress=auto` now shows progress on Windows too. The old progress page, which opened a console window on Windows, is replaced by the indicator.
 
 ### Known issues
 

@@ -41,7 +41,7 @@ Encoded files will have audio/subs based on the current playback options (i.e. w
 
 ### Output formats
 
-Set the format on the options page or with `output_format` in `webm.conf`.
+Set the format on the options page or with `output_format` in `webm.conf`. The Device row under it shows the CPU or GPU that format encodes on, and while encoding, the progress shows in the top left corner.
 
 | `output_format` | Video / audio | Notes |
 |---|---|---|
@@ -59,7 +59,11 @@ Set the format on the options page or with `output_format` in `webm.conf`.
 | `mp3` | audio only, MP3 | |
 | `raw` | uncompressed video / PCM audio | |
 
-The hardware formats only work when your mpv build includes the encoder (`mpv --ovc=help` lists them) and the GPU driver supports it. The VAAPI encoders expect frames in GPU memory, and mpv's encoding mode may not upload them there, so the VAAPI formats can fail with a pixel format error. Run mpv with `--msg-level=all=verbose` to see the encode command and the encoder's error.
+The hardware formats only work when your mpv build includes the encoder (`mpv --ovc=help` lists them) and the GPU driver supports it. The VAAPI encoders expect frames in GPU memory, and mpv's encoding mode may not upload them there, so the VAAPI formats can fail with a pixel format error. When an encode fails, the on-screen message shows the encoder's error, and the console (the ` key) has the details.
+
+For these formats the GPU also decodes the source, so the CPU stays mostly idle. The `hwdec` option in `webm.conf` controls this: `auto` (the default) does it for GPU formats only, `no` always decodes on the CPU, and `auto-copy` always decodes on the GPU.
+
+The `avc-amf` and VAAPI formats convert the video to 8-bit first. HDR and Dolby Vision sources are not tone mapped in the process, so their colors may look washed out or wrong.
 
 ### Uploading
 

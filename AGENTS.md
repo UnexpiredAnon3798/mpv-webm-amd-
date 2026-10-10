@@ -7,7 +7,7 @@ mpv-webm is an mpv script that encodes clips of the playing video by starting a 
 - `src/main.lua`: entry point. Reads options, creates the main page, binds the key, registers events and the testing script-messages.
 - `src/core/`: pure logic, no `mp` calls. `options.lua` is the single source of option names, defaults and `webm.conf` comments.
 - `src/encode/`: building and interpreting encodes, no `mp` calls. `command.lua` builds the whole command line, `formats.lua` holds the output formats.
-- `src/mpv/`: everything that talks to mpv. `host.lua` is the property and filesystem interface that `core/` and `encode/` receive. `encoder.lua` runs an encode end to end. `options.lua` is the live options table shared by all modules.
+- `src/mpv/`: everything that talks to mpv. `host.lua` is the property and filesystem interface that `core/` and `encode/` receive. `encoder.lua` runs an encode end to end in the background. `hardware.lua` reads the CPU and GPU names for the Device row. `options.lua` is the live options table shared by all modules.
 - `src/ui/`: OSD pages built on `ui/page.lua`.
 - `tools/build.lua`: bundles modules into `package.preload` and appends `main.lua`. New modules must be added to its `MODULES` list.
 - `types/`: LuaLS declarations for mpv's Lua API.

@@ -63,7 +63,7 @@ When a change is supposed to alter behavior, run `luajit tests/golden/run.lua --
 - `src/main.lua` wires the script into mpv: options, key binding, events.
 - `src/core/` is pure logic: options, filenames, filters, bitrates, timing, upload arguments, video geometry.
 - `src/encode/` builds encode commands, parses progress and interprets errors.
-- `src/mpv/` talks to mpv: the property host, the live options, events, the encode flow, subprocesses, the clipboard.
+- `src/mpv/` talks to mpv: the property host, the live options, events, the encode flow, hardware detection, subprocesses, the clipboard.
 - `src/ui/` holds the OSD pages.
 - `tools/` has the build: the bundler and the `webm.conf` generator.
 - `types/` declares mpv's Lua API for the type check.
