@@ -69,6 +69,11 @@ apply_current_filters=yes
 write_filename_on_metadata=no
 # Set the number of encoding threads, for codecs libvpx and libvpx-vp9
 threads=4
+# Hardware decoding for the encoder. "auto" decodes on the GPU (--hwdec=auto-copy)
+# when the output format encodes on a GPU, and leaves mpv's own setting alone for
+# formats that encode on the CPU. Any other value, such as no or auto-copy, is
+# used for every format.
+hwdec=auto
 additional_flags=
 # Constant Rate Factor (CRF). The value meaning and limits may change,
 # from codec to codec. Set to -1 to disable.

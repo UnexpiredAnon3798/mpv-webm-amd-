@@ -236,6 +236,22 @@ local function bitrate_flags(options, format, supported, times)
 	return flags
 end
 
+---The --hwdec value for the encoder, or nil to leave mpv's own setting.
+---With options.hwdec "auto", formats that encode on a GPU also decode on it.
+---The -copy mode is needed because the encoder takes frames from main memory.
+---@param options webm.Options
+---@param format webm.Format
+---@return string?
+function M.hardware_decoding(options, format)
+	if options.hwdec == "auto" then
+		return format.device ~= "cpu" and "auto-copy" or nil
+	end
+	if options.hwdec == "" then
+		return nil
+	end
+	return options.hwdec
+end
+
 local function user_flags(options)
 	local flags = {}
 	-- split the user-passed settings on whitespace
@@ -303,6 +319,11 @@ function M.build(host, options, request)
 		-- Same thing with --pause
 		"--no-pause",
 	}, format:codec_flags())
+
+	local hardware_decoding = M.hardware_decoding(options, format)
+	if hardware_decoding then
+		command[#command + 1] = "--hwdec=" .. hardware_decoding
+	end
 
 	local supported = supported_tracks(active_tracks(host), format)
 	append(command, track_flags(supported))

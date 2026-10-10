@@ -23,6 +23,7 @@ command_native_async #1 {"capture_stderr":true,"capture_stdout":true,"name":"sub
   | --no-pause
   | --ovc=hevc_vaapi
   | --oac=aac
+  | --hwdec=auto-copy
   | --vid=1
   | --aid=1
   | --sid=1

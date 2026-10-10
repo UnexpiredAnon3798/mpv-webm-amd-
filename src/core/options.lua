@@ -19,6 +19,7 @@
 ---@field apply_current_filters boolean
 ---@field write_filename_on_metadata boolean
 ---@field threads number
+---@field hwdec string
 ---@field additional_flags string
 ---@field crf number
 ---@field non_strict_additional_flags string
@@ -182,6 +183,16 @@ M.definitions = {
 		default = 4,
 		comment = {
 			"Set the number of encoding threads, for codecs libvpx and libvpx-vp9",
+		},
+	},
+	{
+		name = "hwdec",
+		default = "auto",
+		comment = {
+			'Hardware decoding for the encoder. "auto" decodes on the GPU (--hwdec=auto-copy)',
+			"when the output format encodes on a GPU, and leaves mpv's own setting alone for",
+			"formats that encode on the CPU. Any other value, such as no or auto-copy, is",
+			"used for every format.",
 		},
 	},
 	{

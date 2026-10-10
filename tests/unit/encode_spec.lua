@@ -176,6 +176,30 @@ describe("encode.command.build", function()
 		assert.are.same({ { level = "warn", text = "Couldn't find home dir." } }, plan.messages)
 	end)
 
+	it("decodes on the GPU for GPU formats when hwdec is auto", function()
+		local amf_plan = build({ options = { output_format = "avc-amf" } })
+		assert.is_truthy(index_of(amf_plan.command, "--hwdec=auto-copy"))
+		local x264_plan = build({ options = { output_format = "avc", twopass = false } })
+		for _, argument in ipairs(x264_plan.command) do
+			assert.is_nil(argument:match("^%-%-hwdec="))
+		end
+	end)
+
+	it("uses an explicit hwdec for every format", function()
+		local plan = build({ options = { output_format = "avc", twopass = false, hwdec = "no" } })
+		assert.is_truthy(index_of(plan.command, "--hwdec=no"))
+	end)
+
+	it("picks hardware decoding from the format's device", function()
+		local auto = { hwdec = "auto" }
+		assert.are.equal("auto-copy", command.hardware_decoding(auto, formats["avc-amf"]))
+		assert.are.equal("auto-copy", command.hardware_decoding(auto, formats["avc-nvenc"]))
+		assert.are.equal("auto-copy", command.hardware_decoding(auto, formats["hevc-vaapi"]))
+		assert.is_nil(command.hardware_decoding(auto, formats["webm-vp8"]))
+		assert.is_nil(command.hardware_decoding({ hwdec = "" }, formats["avc-amf"]))
+		assert.are.equal("vaapi-copy", command.hardware_decoding({ hwdec = "vaapi-copy" }, formats.gif))
+	end)
+
 	it("drops crf for webp, after the format sets its own quality", function()
 		local crf = 4
 		-- WebP maps crf to a 0 to 100 quality, 2.5 points per crf step.

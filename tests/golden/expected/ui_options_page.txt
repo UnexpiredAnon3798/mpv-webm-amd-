@@ -149,6 +149,7 @@ event: webm-show-main-page
   force_square_pixels = false (boolean)
   fps = 4 (number)
   gif_dither = 3 (number)
+  hwdec = "auto" (string)
   keybind = "W" (string)
   litterbox_time = "24h" (string)
   margin = 10 (number)

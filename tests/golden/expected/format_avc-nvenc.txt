@@ -22,6 +22,7 @@ command_native_async #1 {"capture_stderr":true,"capture_stdout":true,"name":"sub
   | --no-pause
   | --ovc=h264_nvenc
   | --oac=aac
+  | --hwdec=auto-copy
   | --vid=1
   | --aid=1
   | --sid=1
@@ -67,6 +68,7 @@ command_native_async #2 {"capture_stderr":true,"capture_stdout":true,"name":"sub
   | --no-pause
   | --ovc=h264_nvenc
   | --oac=aac
+  | --hwdec=auto-copy
   | --vid=1
   | --aid=1
   | --sid=1
