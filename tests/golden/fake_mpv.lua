@@ -221,6 +221,43 @@ local function result(status, output)
 	return { status = status, stdout = output or "", error_string = "" }
 end
 
+-- A made-up machine for the Device row: an Intel GPU with little memory, an
+-- NVIDIA card and an AMD card. Scenarios can replace these.
+local DEFAULT_LSPCI = table.concat({
+	"00:02.0 VGA compatible controller: Intel Corporation Test Graphics 600",
+	"01:00.0 VGA compatible controller: NVIDIA Corporation GeForce Test 4000 (rev a1)",
+	"03:00.0 VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Radeon Test 9000 (rev c1)",
+	"05:00.0 Audio device: Advanced Micro Devices, Inc. [AMD/ATI] Test Audio",
+	"",
+}, "\n")
+
+local REGISTRY_CLASS =
+	[[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}]]
+
+-- What `reg query ... /v <name>` prints on a two-GPU Windows machine, by value name.
+local DEFAULT_REGISTRY = {
+	ProcessorNameString = table.concat({
+		"",
+		[[HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0]],
+		"    ProcessorNameString    REG_SZ    Test CPU 3000 8-Core Processor",
+		"",
+	}, "\n"),
+	DriverDesc = table.concat({
+		REGISTRY_CLASS .. [[\0000]],
+		"    DriverDesc    REG_SZ    Radeon Test 9000",
+		REGISTRY_CLASS .. [[\0001]],
+		"    DriverDesc    REG_SZ    Radeon(TM) Test Graphics",
+		"",
+	}, "\n"),
+	["HardwareInformation.qwMemorySize"] = table.concat({
+		REGISTRY_CLASS .. [[\0000]],
+		"    HardwareInformation.qwMemorySize    REG_QWORD    0x200000000",
+		REGISTRY_CLASS .. [[\0001]],
+		"    HardwareInformation.qwMemorySize    REG_QWORD    0x20000000",
+		"",
+	}, "\n"),
+}
+
 function World:run_subprocess(arguments)
 	local settings = self.settings
 	if arguments[1] == "mpv" and arguments[2] == "--no-config" and arguments[3] == "--version" then
@@ -247,6 +284,14 @@ function World:run_subprocess(arguments)
 			self.files[output_path] = "encoded"
 		end
 		return result(status, settings.encode_output)
+	end
+	if arguments[1] == "lspci" then
+		return result(EXIT_SUCCESS, settings.lspci_output or DEFAULT_LSPCI)
+	end
+	if arguments[1] == "reg" then
+		-- The value name comes after "/v".
+		local registry = settings.registry_output or DEFAULT_REGISTRY
+		return result(EXIT_SUCCESS, registry[arguments[#arguments]] or "")
 	end
 	return result(EXIT_SUCCESS)
 end

@@ -18,8 +18,10 @@ local time = require("core.time")
 ---@field accepts_bitrate boolean
 ---@field handles_speed_in_filter_graph? boolean applies speed trim/setpts itself
 ---@field renders_subtitles_in_source_time? boolean
+---@field device webm.DeviceKind what does the encoding
 local Format = {
 	display_name = "Basic",
+	device = "cpu",
 	supports_twopass = true,
 	video_codec = "",
 	audio_codec = "",
@@ -189,6 +191,7 @@ local avc_nvenc = add(define({
 	display_name = "AVC (h264-NVENC/AAC)",
 	supports_twopass = true,
 	video_codec = "h264_nvenc",
+	device = "nvidia",
 	audio_codec = "aac",
 	output_extension = "mp4",
 	accepts_bitrate = true,
@@ -208,6 +211,7 @@ local avc_vaapi = add(define({
 	display_name = "AVC (h264-VAAPI/AAC, AMD/Intel GPU Linux)",
 	supports_twopass = false,
 	video_codec = "h264_vaapi",
+	device = "vaapi",
 	audio_codec = "aac",
 	output_extension = "mp4",
 	accepts_bitrate = true,
@@ -219,6 +223,7 @@ add(define({
 	display_name = "AVC (h264-AMF/AAC, AMD GPU Windows)",
 	supports_twopass = false,
 	video_codec = "h264_amf",
+	device = "amd",
 	audio_codec = "aac",
 	output_extension = "mp4",
 	accepts_bitrate = true,
@@ -257,6 +262,7 @@ local hevc_vaapi = add(define({
 	display_name = "HEVC (VAAPI/AAC, AMD/Intel GPU Linux)",
 	supports_twopass = false,
 	video_codec = "hevc_vaapi",
+	device = "vaapi",
 	audio_codec = "aac",
 	output_extension = "mp4",
 	accepts_bitrate = true,

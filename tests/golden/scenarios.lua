@@ -93,7 +93,13 @@ local function world(settings)
 		platform = settings.platform,
 		properties = base_properties(settings.properties),
 		osd_properties = merge({ ["osd-ass-cc/0"] = "<ass>" }, settings.osd_properties),
-		files = merge({ ["/videos/My Clip.mkv"] = "source", ["/home/tester"] = true }, settings.files),
+		files = merge({
+			["/videos/My Clip.mkv"] = "source",
+			["/home/tester"] = true,
+			["/proc/cpuinfo"] = "processor\t: 0\nmodel name\t: Test CPU 3000 8-Core Processor\n",
+			-- Linux's default VAAPI render device is the AMD card at 03:00.0.
+			["/sys/class/drm/renderD128/device/uevent"] = "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n",
+		}, settings.files),
 		environment = settings.environment or { HOME = "/home/tester" },
 		conf_file = settings.conf_file,
 		encoder_check = settings.encoder_check,
@@ -107,6 +113,8 @@ local function world(settings)
 		osd_width = settings.osd_width,
 		osd_height = settings.osd_height,
 		hold_encoders = settings.hold_encoders,
+		lspci_output = settings.lspci_output,
+		registry_output = settings.registry_output,
 	}
 end
 
@@ -847,6 +855,37 @@ add({
 		{ "key", key = "ESC" },
 		{ "dump_options" },
 	},
+})
+
+-- The Device row under Output Format names the CPU or GPU the selected format
+-- encodes on. LEFT from webm-vp8 goes through avc-amf, hevc-vaapi, avc-vaapi
+-- and avc-nvenc.
+local function device_steps()
+	return {
+		{ "key", key = "W" },
+		{ "key", key = "o" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "key", key = "LEFT" },
+		{ "note", text = "DOWN skips the Device row" },
+		{ "key", key = "DOWN" },
+	}
+end
+
+add({
+	name = "ui_options_device_linux",
+	world = world(),
+	steps = device_steps(),
+})
+
+add({
+	name = "ui_options_device_windows",
+	world = world({
+		platform = "windows",
+		environment = { USERPROFILE = "C:\\Users\\tester" },
+	}),
+	steps = device_steps(),
 })
 
 add({

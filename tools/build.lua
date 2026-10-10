@@ -15,6 +15,7 @@ local conf = require("conf")
 local MODULES = {
 	"core.base64",
 	"core.bitrate",
+	"core.device",
 	"core.filename",
 	"core.filters",
 	"core.geometry",
@@ -31,6 +32,7 @@ local MODULES = {
 	"encode.vp8_log",
 	"mpv.encoder",
 	"mpv.events",
+	"mpv.hardware",
 	"mpv.host",
 	"mpv.options",
 	"mpv.system",

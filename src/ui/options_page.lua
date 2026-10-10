@@ -5,6 +5,7 @@ local mp = require("mp")
 local msg = require("mp.msg")
 
 local formats = require("encode.formats")
+local hardware = require("mpv.hardware")
 local options = require("mpv.options")
 local osd = require("ui.osd")
 local Page = require("ui.page")
@@ -26,9 +27,11 @@ local upload = require("core.upload")
 --		{value, displayValue}, -- Display value can be omitted.
 -- 		{value}
 -- }
+-- If kind is "info", the row only shows text: opts.text() gives it. It can't be
+-- selected and isn't saved.
 -- visible_check is a function to check for visibility, it can be used to hide options based on rules
 ---@class webm.OptionRow
----@field kind "bool"|"int"|"list"
+---@field kind "bool"|"int"|"list"|"info"
 ---@field display_text string
 ---@field opts table
 ---@field value any
@@ -142,6 +145,8 @@ function Option:get_display_value()
 	elseif self.kind == "list" then
 		local pair = self.opts.possibleValues[self.value]
 		return pair[2] or pair[1]
+	elseif self.kind == "info" then
+		return self.opts.text()
 	end
 end
 
@@ -166,6 +171,10 @@ function Option:is_visible()
 		return true
 	end
 	return self.visible_check()
+end
+
+function Option:is_selectable()
+	return self.kind ~= "info" and self:is_visible()
 end
 
 ---@class webm.OptionsPage: webm.Page
@@ -248,6 +257,14 @@ function OptionsPage.new(callback)
 			new_option("list", "Output Format", options.output_format, { possibleValues = format_values }),
 		},
 		{
+			"device",
+			new_option("info", "Device", nil, {
+				text = function()
+					return hardware.describe(formats.by_id[self.rows[1][2]:get_value()])
+				end,
+			}),
+		},
+		{
 			"upload_host",
 			new_option(
 				"list",
@@ -319,7 +336,7 @@ end
 
 function OptionsPage:prev_option()
 	for i = self.current - 1, 1, -1 do
-		if self.rows[i][2]:is_visible() then
+		if self.rows[i][2]:is_selectable() then
 			self.current = i
 			break
 		end
@@ -329,7 +346,7 @@ end
 
 function OptionsPage:next_option()
 	for i = self.current + 1, #self.rows do
-		if self.rows[i][2]:is_visible() then
+		if self.rows[i][2]:is_selectable() then
 			self.current = i
 			break
 		end
@@ -339,7 +356,9 @@ end
 
 function OptionsPage:confirm()
 	for _, row in ipairs(self.rows) do
-		options[row[1]] = row[2]:get_value()
+		if row[2].kind ~= "info" then
+			options[row[1]] = row[2]:get_value()
+		end
 	end
 	self:hide()
 	self.callback(true)

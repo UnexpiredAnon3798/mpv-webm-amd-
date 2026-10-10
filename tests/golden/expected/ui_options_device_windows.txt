@@ -1,0 +1,56 @@
+read_options: identifier=nil
+add_key_binding: W display-webm-encoder {"repeatable":false}
+register_event: file-loaded
+event: webm-script-loaded
+> key W
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"playback_only":false}:
+  | curl
+  | --version
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}WebM maker{\b0}\N\N{\b1}c:{\b0} crop\N{\b1}1:{\b0} set start time (current is unknown)\N{\b1}2:{\b0} set end time (current is unknown)\N{\b1}!:{\b0} jump to start time\N{\b1}@:{\b0} jump to end time\N{\b1}o:{\b0} change encode options\N{\b1}p:{\b0} preview\N{\b1}e:{\b0} encode\N{\b1}u:{\b0} encode & upload\N\N{\b1}ESC:{\b0} close\N
+event: webm-show-main-page
+> key o
+osd_ass 1280x720: <clear>
+osd_message(0): 
+osd_ass 1280x720: <clear>
+osd_message(0): 
+subprocess {"capture_stdout":true,"playback_only":false}:
+  | reg
+  | query
+  | HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0
+  | /v
+  | ProcessorNameString
+subprocess {"capture_stdout":true,"playback_only":false}:
+  | reg
+  | query
+  | HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}
+  | /s
+  | /v
+  | DriverDesc
+subprocess {"capture_stdout":true,"playback_only":false}:
+  | reg
+  | query
+  | HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}
+  | /s
+  | /v
+  | HardwareInformation.qwMemorySize
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ WebM ▶\NDevice: Test CPU 3000 8-Core Processor (CPU)\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ AVC (h264-AMF/AAC, AMD GPU Windows) ▶\NDevice: Radeon Test 9000 (GPU)\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ HEVC (VAAPI/AAC, AMD/Intel GPU Linux) ▶\NDevice: VAAPI only works on Linux\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ AVC (h264-VAAPI/AAC, AMD/Intel GPU Linux) ▶\NDevice: VAAPI only works on Linux\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+> key LEFT
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: ◀ AVC (h264-NVENC/AAC) ▶\NDevice: no NVIDIA GPU found\NUpload Destination: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+# DOWN skips the Device row
+> key DOWN
+osd_ass 1280x720:
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: ◀ AVC (h264-NVENC/AAC) ▶\NDevice: no NVIDIA GPU found\N{\b1}Upload Destination{\b0}: catbox.moe ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N

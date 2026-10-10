@@ -20,17 +20,19 @@ msg.warn: Tried to set invalid value nope to Output Format option.
 msg.warn: Tried to set invalid value 333 to Scale Height option.
 osd_ass 1280x720: <clear>
 osd_message(0): 
+subprocess {"capture_stdout":true,"playback_only":false}:
+  | lspci
 osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: AV1 ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: AV1 ▶\NDevice: Test CPU 3000 8-Core Processor (CPU)\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
 > key LEFT
 osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: AV1 ▶\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\N{\b1}Output Format{\b0}: AV1 ▶\NDevice: Test CPU 3000 8-Core Processor (CPU)\NTwo Pass: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
 > key DOWN
 osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: AV1 ▶\N{\b1}Two Pass{\b0}: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: AV1 ▶\NDevice: Test CPU 3000 8-Core Processor (CPU)\N{\b1}Two Pass{\b0}: ◀ yes ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
 > key RIGHT
 osd_ass 1280x720:
-  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: AV1 ▶\N{\b1}Two Pass{\b0}: ◀ no ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
+  | {\an7}{\pos(10.000000,10.000000)}{\fs28}{\b1}Options:{\b0}\N\NOutput Format: AV1 ▶\NDevice: Test CPU 3000 8-Core Processor (CPU)\N{\b1}Two Pass{\b0}: ◀ no ▶\NApply Current Video Filters: ◀ yes ▶\NScale Height: no ▶\NStrict Filesize Constraint: ◀ no ▶\NWrite Filename on Metadata: ◀ no ▶\NTarget Filesize: ◀ 2500 ▶\NCRF: ◀ 10 ▶\NFPS: source ▶\NForce Square Pixels: ◀ no ▶\N\N▲ / ▼: navigate\N{\b1}ENTER:{\b0} confirm options\N{\b1}ESC:{\b0} cancel\N
 > key ESC
 osd_ass 1280x720: <clear>
 osd_message(0): 
